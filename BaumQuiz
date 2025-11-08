@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Baumarten Quiz (Offline)</title>
+<style>
+  body{font-family:system-ui,Arial;background:#f7f8fb;margin:0;padding:0;color:#111}
+  .wrap{max-width:820px;margin:auto;padding:16px}
+  h1{text-align:center;font-size:22px;margin-bottom:6px}
+  .sub{text-align:center;font-size:13px;color:#666;margin-bottom:12px}
+  .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin-bottom:16px}
+  button,select{padding:10px 14px;border-radius:10px;border:1px solid #ccc;font-size:15px;background:#fff}
+  button.primary{background:#0ea5a4;color:#fff;border:none}
+  img{max-width:100%;border-radius:10px;margin:12px 0}
+  .answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+  .answer{background:#fff;border:1px solid #ddd;border-radius:10px;padding:10px;text-align:center;font-weight:600;cursor:pointer}
+  .answer.correct{background:#ecfdf5;border-color:#16a34a;color:#16a34a}
+  .answer.wrong{background:#fef2f2;border-color:#dc2626;color:#dc2626}
+  .letters{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px}
+  .letter{padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:white;font-weight:700;cursor:pointer}
+  .target{min-height:48px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;border:1px dashed #ccc;border-radius:8px;padding:8px}
+  .footer{display:flex;justify-content:space-between;margin-top:10px;color:#666}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Baumarten-Quiz 🌳</h1>
+  <div class="sub">Offline-Version – keine Internetverbindung nötig</div>
+
+  <div class="card" id="setup">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:10px">
+      <label>Modus:
+        <select id="mode">
+          <option value="img2name">Bild → Name</option>
+          <option value="name2img">Name → Bild</option>
+          <option value="img2anagram">Bild → Buchstaben</option>
+        </select>
+      </label>
+      <label>Schwierigkeit:
+        <select id="diff">
+          <option value="easy">Leicht</option>
+          <option value="medium" selected>Mittel</option>
+          <option value="hard">Schwer</option>
+        </select>
+      </label>
+    </div>
+    <div style="text-align:center">
+      <button class="primary" id="start">Spiel starten</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="game">
+    <div id="questionText" style="text-align:center;font-weight:700;margin-bottom:6px"></div>
+    <img id="questionImg" alt="Baum">
+    <div id="namePrompt" style="text-align:center;font-weight:700"></div>
+    <div id="answers" class="answers"></div>
+    <div id="anagram" class="hidden">
+      <div class="target" id="target"></div>
+      <div class="letters" id="letters"></div>
+      <div style="text-align:center;margin-top:8px">
+        <button id="resetAnagram">Zurücksetzen</button>
+      </div>
+    </div>
+    <div class="footer">
+      <div>Frage <span id="qNow">1</span>/25</div>
+      <div>Punkte: <span id="score">0</span></div>
+    </div>
+    <div style="text-align:center;margin-top:10px">
+      <button id="next" class="hidden">Nächste Frage</button>
+      <button id="end">Beenden</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="endCard" style="text-align:center">
+    <h2>Ergebnis</h2>
+    <p><strong id="finalScore">0</strong> / 25 Punkte</p>
+    <button class="primary" id="restart">Nochmal</button>
+  </div>
+</div>
+
+<script>
+// ------------------ Offline Daten ------------------
+const trees = [
+  {name:"Eiche", img:"https://upload.wikimedia.org/wikipedia/commons/6/6e/Pedunculate_oak_quercus_robur.jpg"},
+  {name:"Buche", img:"https://upload.wikimedia.org/wikipedia/commons/0/0b/Beech_tree_in_spring.jpg"},
+  {name:"Fichte", img:"https://upload.wikimedia.org/wikipedia/commons/8/88/Picea_abies_001.jpg"},
+  {name:"Kiefer", img:"https://upload.wikimedia.org/wikipedia/commons/4/44/Pinus_sylvestris_Forest.jpg"},
+  {name:"Ahorn", img:"https://upload.wikimedia.org/wikipedia/commons/b/b1/Acer_platanoides_2006.jpg"},
+  {name:"Birke", img:"https://upload.wikimedia.org/wikipedia/commons/1/18/Betula_pendula_001.jpg"},
+  {name:"Linde", img:"https://upload.wikimedia.org/wikipedia/commons/1/1d/Tilia_cordata_MHNT.jpg"},
+  {name:"Esche", img:"https://upload.wikimedia.org/wikipedia/commons/a/aa/Fraxinus_excelsior.jpg"},
+  {name:"Tanne", img:"https://upload.wikimedia.org/wikipedia/commons/e/e1/Abies_alba_001.jpg"},
+  {name:"Lärche", img:"https://upload.wikimedia.org/wikipedia/commons/8/86/Larix_decidua1.jpg"},
+  {name:"Ulme", img:"https://upload.wikimedia.org/wikipedia/commons/4/4a/Ulmus_glabra_Leaves_2008-08-11.jpg"},
+  {name:"Pappel", img:"https://upload.wikimedia.org/wikipedia/commons/8/8e/Populus_tremula1.jpg"},
+  {name:"Weide", img:"https://upload.wikimedia.org/wikipedia/commons/2/26/Salix_alba_tree.jpg"},
+  {name:"Erle", img:"https://upload.wikimedia.org/wikipedia/commons/f/fc/Alnus_glutinosa01.jpg"},
+  {name:"Kastanie", img:"https://upload.wikimedia.org/wikipedia/commons/2/2d/Castanea_sativa_foliage_and_fruit.jpg"},
+  {name:"Platane", img:"https://upload.wikimedia.org/wikipedia/commons/4/47/Platanus_x_hispanica.jpg"},
+  {name:"Eibe", img:"https://upload.wikimedia.org/wikipedia/commons/0/02/Taxus_baccata_fruits_2005-10-25.jpg"},
+  {name:"Apfelbaum", img:"https://upload.wikimedia.org/wikipedia/commons/4/46/Malus_domestica_Bramley_apples.jpg"},
+  {name:"Kirschbaum", img:"https://upload.wikimedia.org/wikipedia/commons/6/6b/Prunus_avium_2005.05.21_14.00.59.jpg"},
+  {name:"Walnussbaum", img:"https://upload.wikimedia.org/wikipedia/commons/5/52/Juglans_regia_foliage.jpg"},
+  {name:"Robinie", img:"https://upload.wikimedia.org/wikipedia/commons/7/70/Robinia_pseudoacacia_Bl%C3%BCte_2.JPG"},
+  {name:"Zypresse", img:"https://upload.wikimedia.org/wikipedia/commons/3/3b/Cupressus_sempervirens.jpg"},
+  {name:"Zeder", img:"https://upload.wikimedia.org/wikipedia/commons/a/a2/Cedrus_atlantica_glauca.jpg"},
+  {name:"Magnolie", img:"https://upload.wikimedia.org/wikipedia/commons/9/93/Magnolia_x_soulangeana2.jpg"},
+  {name:"Hainbuche", img:"https://upload.wikimedia.org/wikipedia/commons/a/a2/Carpinus_betulus_leaf.jpg"},
+  {name:"Eberesche", img:"https://upload.wikimedia.org/wikipedia/commons/9/9f/Sorbus_aucuparia_tree.jpg"},
+  {name:"Kirsche", img:"https://upload.wikimedia.org/wikipedia/commons/2/2b/Cherry_tree_in_bloom.jpg"},
+  {name:"Trompetenbaum", img:"https://upload.wikimedia.org/wikipedia/commons/a/ae/Catalpa_bignonioides1.jpg"},
+  {name:"Pfirschbaum", img:"https://upload.wikimedia.org/wikipedia/commons/1/1b/Peach_tree_flowers.jpg"},
+  {name:"Holunder", img:"https://upload.wikimedia.org/wikipedia/commons/2/26/Sambucus_nigra_flowers.jpg"}
+];
+// ------------------ Variablen ------------------
+let mode="img2name", diff="medium", score=0, index=0, questions=[];
+const QCOUNT=25;
+// ------------------ Elemente ------------------
+const el=a=>document.getElementById(a);
+el("start").onclick=startGame;
+el("next").onclick=()=>nextQ();
+el("end").onclick=endGame;
+el("restart").onclick=()=>{el("endCard").classList.add("hidden");startGame()};
+el("resetAnagram").onclick=resetAnagram;
+function startGame(){
+  mode=el("mode").value;diff=el("diff").value;score=0;index=0;
+  questions=makeQuestions();el("setup").classList.add("hidden");
+  el("game").classList.remove("hidden");renderQ();
+}
+function makeQuestions(){
+  const pool=[...trees];
+  if(diff==="easy") pool.splice(12);
+  if(diff==="hard") pool.push(...trees);
+  return shuffle(pool).slice(0,QCOUNT).map(t=>{
+    const opts=shuffle([t,...shuffle(trees.filter(x=>x!==t)).slice(0,3)]);
+    return {correct:t,options:opts};
+  });
+}
+function renderQ(){
+  const q=questions[index];
+  el("qNow").innerText=index+1;el("score").innerText=score;
+  el("answers").innerHTML="";el("namePrompt").innerText="";el("questionImg").classList.add("hidden");
+  el("anagram").classList.add("hidden");el("next").classList.add("hidden");
+  if(mode==="img2name"){
+    el("questionText").innerText="Welcher Name passt zum Bild?";
+    el("questionImg").src=q.correct.img;el("questionImg").classList.remove("hidden");
+    q.options.forEach(o=>{
+      const d=document.createElement("div");d.className="answer";d.innerText=o.name;
+      d.onclick=()=>clickAnswer(o===q.correct,d);el("answers").appendChild(d);
+    });
+  } else if(mode==="name2img"){
+    el("questionText").innerText="Wähle das richtige Bild für:";
+    el("namePrompt").innerText=q.correct.name;
+    q.options.forEach(o=>{
+      const d=document.createElement("div");d.className="answer";
+      const img=document.createElement("img");img.src=o.img;img.alt=o.name;d.appendChild(img);
+      d.onclick=()=>clickAnswer(o===q.correct,d);el("answers").appendChild(d);
+    });
+  } else {
+    el("questionText").innerText="Ordne die Buchstaben zum Namen:";
+    el("questionImg").src=q.correct.img;el("questionImg").classList.remove("hidden");
+    el("anagram").classList.remove("hidden");setupAnagram(q.correct.name);
+  }
+}
+function clickAnswer(correct,div){
+  [...document.querySelectorAll(".answer")].forEach(a=>a.onclick=null);
+  if(correct){div.classList.add("correct");score++;}
+  else {div.classList.add("wrong");}
+  el("score").innerText=score;el("next").classList.remove("hidden");
+}
+function nextQ(){
+  index++;if(index>=questions.length)return endGame();
+  renderQ();
+}
+function endGame(){
+  el("game").classList.add("hidden");
+  el("endCard").classList.remove("hidden");
+  el("finalScore").innerText=score;
+}
+function shuffle(a){return a.sort(()=>Math.random()-0.5);}
+// ----------- Anagramm -----------
+function setupAnagram(name){
+  const clean=name.replace(/[^A-Za-zÄÖÜäöüß]/g,"");
+  const letters=shuffle(clean.split(""));
+  el("target").innerHTML="";el("letters").innerHTML="";
+  letters.forEach(l=>{
+    const b=document.createElement("div");b.className="letter";b.innerText=l;
+    b.onclick=()=>placeLetter(b);el("letters").appendChild(b);
+  });
+  el("target").dataset.answer=clean;
+}
+function placeLetter(btn){
+  const t=el("target");const slot=document.createElement("div");
+  slot.innerText=btn.innerText;slot.className="letter";t.appendChild(slot);
+  btn.style.visibility="hidden";
+  checkAnagram();
+}
+function checkAnagram(){
+  const t=el("target");const formed=[...t.children].map(c=>c.innerText).join("");
+  if(formed.length===t.dataset.answer.length){
+    if(formed.toLowerCase()===t.dataset.answer.toLowerCase()){score++;el("score").innerText=score;el("next").classList.remove("hidden");}
+  }
+}
+function resetAnagram(){el("target").innerHTML="";[...el("letters").children].forEach(c=>c.style.visibility="visible");}
+</script>
+</body>
+</html>
