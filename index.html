@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baumarten Quiz</title>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f9fafb;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  header {
+    background-color: #d9f2dc;
+    padding: 20px;
+    color: #2e7d32;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .container {
+    padding: 20px;
+  }
+
+  button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    margin: 10px;
+    border-radius: 10px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 80%;
+    max-width: 300px;
+  }
+
+  button:hover {
+    background-color: #45a049;
+  }
+
+  img {
+    width: 80%;
+    max-width: 300px;
+    border-radius: 10px;
+    margin: 15px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  #quiz, #result, #categorySelect {
+    display: none;
+  }
+
+  .option-btn {
+    display: block;
+    width: 80%;
+    margin: 8px auto;
+  }
+
+  .progress {
+    height: 10px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 20px;
+  }
+
+  .progress-bar {
+    height: 10px;
+    background-color: #4CAF50;
+    width: 0%;
+    transition: width 0.4s;
+  }
+</style>
+</head>
+<body>
+
+<header>🌳 Baumarten Quiz</header>
+
+<div class="container" id="home">
+  <h2>Willkommen!</h2>
+  <p>Wähle eine Kategorie:</p>
+  <button onclick="selectCategory('bildName')">🌲 Bild → Name</button>
+  <button onclick="selectCategory('nameBild')">🌿 Name → Bild</button>
+  <button onclick="selectCategory('buchstaben')">🍃 Buchstabenrätsel</button>
+</div>
+
+<div class="container" id="quiz">
+  <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
+  <h2 id="question"></h2>
+  <img id="treeImage" src="" alt="Baum">
+  <div id="options"></div>
+  <p id="feedback"></p>
+</div>
+
+<div class="container" id="result">
+  <h2>Quiz beendet! 🎉</h2>
+  <p id="score"></p>
+  <button onclick="goHome()">Zurück zur Startseite</button>
+</div>
+
+<script>
+const quizData = {
+  bildName: [
+    {
+      image: "https://upload.wikimedia.org/wikipedia/commons/3/3a/Quercus_robur.jpg",
+      question: "Welcher Baum ist das?",
+      options: ["Eiche", "Buche", "Ahorn", "Birke"],
+      correct: "Eiche"
+    },
+    {
+      image: "https://upload.wikimedia.org/wikipedia/commons/9/9a/Fagus_sylvatica_foliage.jpg",
+      question: "Welcher Baum ist das?",
+      options: ["Esche", "Buche", "Linde", "Tanne"],
+      correct: "Buche"
+    },
+    {
+      image: "https://upload.wikimedia.org/wikipedia/commons/e/ef/Betula_pendula_001.jpg",
+      question: "Welcher Baum ist das?",
+      options: ["Birke", "Ahorn", "Eiche", "Weide"],
+      correct: "Birke"
+    }
+  ],
+  nameBild: [
+    {
+      question: "Welche ist die Eiche?",
+      options: [
+        "https://upload.wikimedia.org/wikipedia/commons/3/3a/Quercus_robur.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/9/9a/Fagus_sylvatica_foliage.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/e/ef/Betula_pendula_001.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/6/6f/Acer_platanoides_1.jpg"
+      ],
+      correct: 0
+    },
+    {
+      question: "Welche ist die Buche?",
+      options: [
+        "https://upload.wikimedia.org/wikipedia/commons/6/6f/Acer_platanoides_1.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/9/9a/Fagus_sylvatica_foliage.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/e/ef/Betula_pendula_001.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/3/3a/Quercus_robur.jpg"
+      ],
+      correct: 1
+    }
+  ],
+  buchstaben: [
+    {
+      image: "https://upload.wikimedia.org/wikipedia/commons/3/3a/Quercus_robur.jpg",
+      correct: "EICHE"
+    },
+    {
+      image: "https://upload.wikimedia.org/wikipedia/commons/9/9a/Fagus_sylvatica_foliage.jpg",
+      correct: "BUCHE"
+    }
+  ]
+};
+
+let currentCategory = "";
+let currentIndex = 0;
+let score = 0;
+
+function selectCategory(cat) {
+  currentCategory = cat;
+  currentIndex = 0;
+  score = 0;
+  document.getElementById('home').style.display = "none";
+  document.getElementById('result').style.display = "none";
+  document.getElementById('quiz').style.display = "block";
+  loadQuestion();
+}
+
+function loadQuestion() {
+  const data = quizData[currentCategory][currentIndex];
+  const progress = ((currentIndex) / quizData[currentCategory].length) * 100;
+  document.getElementById("progress-bar").style.width = progress + "%";
+  document.getElementById("feedback").innerText = "";
+
+  if (currentCategory === "bildName") {
+    document.getElementById("treeImage").src = data.image;
+    document.getElementById("question").innerText = data.question;
+    const optionsDiv = document.getElementById("options");
+    optionsDiv.innerHTML = "";
+    data.options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.className = "option-btn";
+      btn.innerText = opt;
+      btn.onclick = () => checkAnswer(opt, data.correct);
+      optionsDiv.appendChild(btn);
+    });
+  }
+
+  if (currentCategory === "nameBild") {
+    document.getElementById("treeImage").style.display = "none";
+    document.getElementById("question").innerText = data.question;
+    const optionsDiv = document.getElementById("options");
+    optionsDiv.innerHTML = "";
+    data.options.forEach((url, i) => {
+      const imgBtn = document.createElement("button");
+      imgBtn.className = "option-btn";
+      imgBtn.innerHTML = `<img src="${url}" alt="Option">`;
+      imgBtn.onclick = () => checkAnswer(i, data.correct);
+      optionsDiv.appendChild(imgBtn);
+    });
+  }
+
+  if (currentCategory === "buchstaben") {
+    document.getElementById("treeImage").src = data.image;
+    document.getElementById("question").innerText = "Setze den Namen richtig zusammen:";
+    const optionsDiv = document.getElementById("options");
+    optionsDiv.innerHTML = "";
+    const shuffled = shuffle(data.correct.split(""));
+    shuffled.forEach(ch => {
+      const btn = document.createElement("button");
+      btn.className = "option-btn";
+      btn.innerText = ch;
+      btn.onclick = () => guessLetter(btn, data.correct);
+      optionsDiv.appendChild(btn);
+    });
+    guessedWord = "";
+  }
+}
+
+function checkAnswer(answer, correct) {
+  const feedback = document.getElementById("feedback");
+  if (answer === correct) {
+    score++;
+    feedback.innerText = "✅ Richtig!";
+  } else {
+    feedback.innerText = "❌ Falsch!";
+  }
+  setTimeout(nextQuestion, 800);
+}
+
+let guessedWord = "";
+
+function guessLetter(btn, correct) {
+  guessedWord += btn.innerText;
+  btn.disabled = true;
+  if (guessedWord.length === correct.length) {
+    if (guessedWord === correct) {
+      score++;
+      document.getElementById("feedback").innerText = "✅ Richtig!";
+    } else {
+      document.getElementById("feedback").innerText = "❌ Falsch!";
+    }
+    setTimeout(nextQuestion, 800);
+  }
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex < quizData[currentCategory].length) {
+    loadQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function showResult() {
+  document.getElementById("quiz").style.display = "none";
+  document.getElementById("result").style.display = "block";
+  document.getElementById("score").innerText =
+    `Du hast ${score} von ${quizData[currentCategory].length} richtig beantwortet.`;
+}
+
+function goHome() {
+  document.getElementById("result").style.display = "none";
+  document.getElementById("home").style.display = "block";
+}
+
+function shuffle(arr) {
+  return arr.sort(() => Math.random() - 0.5);
+}
+</script>
+
+</body>
+</html>
