@@ -1,283 +1,363 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baumarten Quiz</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Baumarten Quiz — Deutsch / English</title>
 <style>
-  body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f9fafb;
-    color: #333;
-    margin: 0;
-    padding: 0;
-    text-align: center;
+  :root{
+    --bg:#fbfff9; --card:#ffffff; --muted:#556b4a; --accent:#66c188;
+    --success:#16a34a; --danger:#dc2626; --radius:12px;
   }
-
-  header {
-    background-color: #d9f2dc;
-    padding: 20px;
-    color: #2e7d32;
-    font-size: 24px;
-    font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-
-  .container {
-    padding: 20px;
-  }
-
-  button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 15px 20px;
-    margin: 10px;
-    border-radius: 10px;
-    font-size: 18px;
-    cursor: pointer;
-    transition: 0.3s;
-    width: 80%;
-    max-width: 300px;
-  }
-
-  button:hover {
-    background-color: #45a049;
-  }
-
-  img {
-    width: 80%;
-    max-width: 300px;
-    border-radius: 10px;
-    margin: 15px 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-
-  #quiz, #result, #categorySelect {
-    display: none;
-  }
-
-  .option-btn {
-    display: block;
-    width: 80%;
-    margin: 8px auto;
-  }
-
-  .progress {
-    height: 10px;
-    background-color: #e0e0e0;
-    border-radius: 5px;
-    overflow: hidden;
-    margin: 20px;
-  }
-
-  .progress-bar {
-    height: 10px;
-    background-color: #4CAF50;
-    width: 0%;
-    transition: width 0.4s;
-  }
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:#123;line-height:1.35}
+  .wrap{max-width:920px;margin:0 auto;padding:18px}
+  header{background:#e8f7ea;padding:18px;border-radius:12px;color:var(--muted);font-weight:700;text-align:center}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;margin:14px 0}
+  button,select{padding:10px 12px;border-radius:10px;border:1px solid #e6efe6;background:white;cursor:pointer;font-size:15px}
+  button.primary{background:var(--accent);color:#04301a;border:none}
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(10,10,12,0.04);margin-bottom:12px}
+  .center{text-align:center}
+  img.spec{max-width:100%;height:auto;border-radius:10px;display:block;margin:12px auto}
+  .answers{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+  .answer{background:#fff;border-radius:10px;padding:12px;text-align:center;border:1px solid #e6efe6;cursor:pointer;font-weight:600}
+  .answer.correct{background:#ecfdf5;border-color:var(--success);color:var(--success)}
+  .answer.wrong{background:#fff1f2;border-color:var(--danger);color:var(--danger)}
+  .progress{height:10px;background:#e6efe6;border-radius:8px;overflow:hidden;margin:12px 0}
+  .bar{height:10px;background:var(--accent);width:0%;transition:width .4s}
+  .small{font-size:13px;color:#556b4a}
+  .letters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+  .letter{padding:10px 12px;border-radius:8px;border:1px solid #dbeadc;background:white;cursor:pointer;font-weight:700}
+  .target{min-height:48px;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;padding:8px;border:1px dashed #dbeadc;border-radius:8px;background:#fff}
+  @media (max-width:580px){ .answers{grid-template-columns:1fr} button,select{width:100%} }
 </style>
 </head>
 <body>
+<div class="wrap">
+  <header>🌳 Baumarten Quiz / Tree Species Quiz</header>
 
-<header>🌳 Baumarten Quiz</header>
+  <div class="card center" id="startCard">
+    <div class="small" style="margin-bottom:10px">Wähle Sprache / Choose language</div>
+    <div class="row" style="margin-bottom:12px">
+      <select id="langSel" aria-label="language">
+        <option value="de">Deutsch</option>
+        <option value="en">English</option>
+      </select>
+      <select id="modeSel" aria-label="mode">
+        <option value="img2name">Bild → Name / Image → Name</option>
+        <option value="name2img">Name → Bild / Name → Image</option>
+        <option value="anagram">Buchstaben / Anagram</option>
+      </select>
+    </div>
 
-<div class="container" id="home">
-  <h2>Willkommen!</h2>
-  <p>Wähle eine Kategorie:</p>
-  <button onclick="selectCategory('bildName')">🌲 Bild → Name</button>
-  <button onclick="selectCategory('nameBild')">🌿 Name → Bild</button>
-  <button onclick="selectCategory('buchstaben')">🍃 Buchstabenrätsel</button>
-</div>
+    <div class="small" style="margin-bottom:8px">Wähle Schwierigkeitsgrad / Choose difficulty</div>
+    <div class="row">
+      <button onclick="start('easy')" id="btnEasy">Leicht / Easy</button>
+      <button onclick="start('medium')" id="btnMid">Mittel / Medium</button>
+      <button onclick="start('hard')" id="btnHard">Schwer / Hard</button>
+    </div>
 
-<div class="container" id="quiz">
-  <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
-  <h2 id="question"></h2>
-  <img id="treeImage" src="" alt="Baum">
-  <div id="options"></div>
-  <p id="feedback"></p>
-</div>
+    <p class="small" style="margin-top:12px">Quelle der Artenliste: baumkunde.de (A–Z). Bilder: Wikimedia Commons (best effort). :contentReference[oaicite:1]{index=1}</p>
+  </div>
 
-<div class="container" id="result">
-  <h2>Quiz beendet! 🎉</h2>
-  <p id="score"></p>
-  <button onclick="goHome()">Zurück zur Startseite</button>
+  <div id="gameCard" class="card hidden">
+    <div class="center">
+      <div id="qHeader" style="font-weight:700"></div>
+      <div class="progress"><div id="bar" class="bar"></div></div>
+    </div>
+
+    <img id="mainImg" class="spec hidden" alt="Baumfoto">
+    <div id="namePrompt" class="center" style="font-size:18px;font-weight:700"></div>
+
+    <div id="answers" class="answers"></div>
+
+    <div id="anagramArea" class="hidden">
+      <div class="target" id="anagramTarget"></div>
+      <div class="letters" id="anagramLetters"></div>
+      <div style="margin-top:10px;text-align:center"><button onclick="resetAnagram()">Zurücksetzen / Reset</button></div>
+    </div>
+
+    <div class="row" style="justify-content:space-between;margin-top:12px">
+      <div class="small" id="progressText">Frage 0 / 25</div>
+      <div class="small">Punkte / Score: <span id="score">0</span></div>
+    </div>
+
+    <div style="margin-top:12px;text-align:center">
+      <button id="nextBtn" class="hidden" onclick="nextQ()">Nächste / Next</button>
+      <button onclick="endGame()">Beenden / End</button>
+    </div>
+  </div>
+
+  <div id="endCard" class="card center hidden">
+    <h2 id="endTitle">Ergebnis / Result</h2>
+    <p id="endText"></p>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+      <button onclick="goHome()">Zurück / Home</button>
+      <button onclick="start(currentDifficulty)">Nochmal / Play again</button>
+    </div>
+  </div>
 </div>
 
 <script>
-const quizData = {
-  bildName: [
-    {
-      image: "https://upload.wikimedia.org/wikipedia/commons/3/3a/Quercus_robur.jpg",
-      question: "Welcher Baum ist das?",
-      options: ["Eiche", "Buche", "Ahorn", "Birke"],
-      correct: "Eiche"
-    },
-    {
-      image: "https://upload.wikimedia.org/wikipedia/commons/9/9a/Fagus_sylvatica_foliage.jpg",
-      question: "Welcher Baum ist das?",
-      options: ["Esche", "Buche", "Linde", "Tanne"],
-      correct: "Buche"
-    },
-    {
-      image: "https://upload.wikimedia.org/wikipedia/commons/e/ef/Betula_pendula_001.jpg",
-      question: "Welcher Baum ist das?",
-      options: ["Birke", "Ahorn", "Eiche", "Weide"],
-      correct: "Birke"
-    }
-  ],
-  nameBild: [
-    {
-      question: "Welche ist die Eiche?",
-      options: [
-        "https://upload.wikimedia.org/wikipedia/commons/3/3a/Quercus_robur.jpg",
-        "https://upload.wikimedia.org/wikipedia/commons/9/9a/Fagus_sylvatica_foliage.jpg",
-        "https://upload.wikimedia.org/wikipedia/commons/e/ef/Betula_pendula_001.jpg",
-        "https://upload.wikimedia.org/wikipedia/commons/6/6f/Acer_platanoides_1.jpg"
-      ],
-      correct: 0
-    },
-    {
-      question: "Welche ist die Buche?",
-      options: [
-        "https://upload.wikimedia.org/wikipedia/commons/6/6f/Acer_platanoides_1.jpg",
-        "https://upload.wikimedia.org/wikipedia/commons/9/9a/Fagus_sylvatica_foliage.jpg",
-        "https://upload.wikimedia.org/wikipedia/commons/e/ef/Betula_pendula_001.jpg",
-        "https://upload.wikimedia.org/wikipedia/commons/3/3a/Quercus_robur.jpg"
-      ],
-      correct: 1
-    }
-  ],
-  buchstaben: [
-    {
-      image: "https://upload.wikimedia.org/wikipedia/commons/3/3a/Quercus_robur.jpg",
-      correct: "EICHE"
-    },
-    {
-      image: "https://upload.wikimedia.org/wikipedia/commons/9/9a/Fagus_sylvatica_foliage.jpg",
-      correct: "BUCHE"
-    }
-  ]
-};
+/*
+  3 Schwierigkeitsgrade mit je 25 Arten aus baumkunde.de (A–Z).
+  Die Namen wurden direkt aus https://www.baumkunde.de/baumlisten/baumliste_az.php entnommen. :contentReference[oaicite:2]{index=2}
 
-let currentCategory = "";
-let currentIndex = 0;
+  Bilder werden zur Laufzeit per Wikimedia / de.wikipedia REST API (page summary / commons) geladen (best-effort).
+*/
+
+// --- 75 Arten (25 easy, 25 medium, 25 hard) ---
+// Quelle: baumkunde.de (A–Z). Ich habe die Reihenfolge zur Einteilung verwendet.
+const easyList = [
+"Abendländischer Lebensbaum","Afrikanische Tamariske","Afrikanischer Butterbaum","Afrikanischer Mahagonibaum","Afrikanischer Tulpenbaum",
+"Afzelia","Ahornblättriger Flaschenbaum","Ährige Felsenbirne","Ährige Scheinhasel","Aleppo-Kiefer",
+"Alexandrinischer Lorbeer","Algerische Eiche","Alpen-Goldregen","Alpen-Heckenkirsche","Amerikanische Buche",
+"Amerikanische Eberesche","Amerikanische Gleditschie","Amerikanische Hainbuche","Amerikanische Heidelbeere","Amerikanische Kastanie",
+"Amerikanische Klettertrompete","Amerikanische Linde","Amerikanische Persimone","Amerikanische Reif-Weide","Amerikanischer Amberbaum"
+];
+
+const mediumList = [
+"Amerikanischer Erdbeerbaum","Amerikanischer Schlangenhaut-Ahorn","Amerikanisches Gelbholz","Amur-Korkbaum","Amur-Trauben-Kirsche",
+"Andentanne","Aprikose","Arganbaum","Arizona-Zypresse","Armblütige Scheinhasel",
+"Arznei-Magnolie","Atlas-Zeder","Australische Silbereiche","Avocado","Babylonische Trauer-Weide",
+"Balearen-Johanniskraut","Balsam-Pappel","Balsam-Tanne","Banks Rose","Banks-Kiefer",
+"Barringtonia asiatica","Baum-Anemone","Baum-Aralie","Baum-Felsenbirne","Baum-Hasel"
+];
+
+const hardList = [
+"Baum-Heide","Baum-Wolfsmilch","Behaarte Alpenrose","Behaarte Spatzenzunge","Beinwellblättrige Zistrose",
+"Berg-Ahorn","Berg-Bohnenkraut","Berg-Kiefer","Berg-Kirsche","Berg-Schneeglöckchenbaum",
+"Berg-Ulme","Berg-Waldrebe","Besen-Ginster","Besenheide","Bibernell-Rose",
+"Billards Spierstrauch","Birke","Birken-Feige","Birken-Pappel","Birkenblättrige Birne",
+"Bitternuss","Bitterorange","Bittersüßer Nachtschatten","Blattlose Tamariske","Blau-Tanne"
+];
+
+// unify into a master mapping for easier picking
+const difficulties = { easy: easyList, medium: mediumList, hard: hardList };
+
+// game state
+let currentMode = 'img2name'; // img2name | name2img | anagram
+let currentLang = 'de'; // de | en
+let questions = [];
+let currentQ = 0;
 let score = 0;
+let currentDifficulty = 'easy';
+const QUESTIONS_PER_GAME = 25; // pro Wunsch: 25 Fragen pro Kategorie
 
-function selectCategory(cat) {
-  currentCategory = cat;
-  currentIndex = 0;
-  score = 0;
-  document.getElementById('home').style.display = "none";
-  document.getElementById('result').style.display = "none";
-  document.getElementById('quiz').style.display = "block";
-  loadQuestion();
+// elements
+const startCard = document.getElementById('startCard');
+const gameCard = document.getElementById('gameCard');
+const endCard = document.getElementById('endCard');
+const qHeader = document.getElementById('qHeader');
+const mainImg = document.getElementById('mainImg');
+const namePrompt = document.getElementById('namePrompt');
+const answersBox = document.getElementById('answers');
+const bar = document.getElementById('bar');
+const progressText = document.getElementById('progressText');
+const scoreEl = document.getElementById('score');
+const anagramArea = document.getElementById('anagramArea');
+const anagramTarget = document.getElementById('anagramTarget');
+const anagramLetters = document.getElementById('anagramLetters');
+
+document.getElementById('modeSel').addEventListener('change', e=> currentMode = e.target.value);
+document.getElementById('langSel').addEventListener('change', e=> currentLang = e.target.value);
+
+// --- Start ---
+function start(diff){
+  currentDifficulty = diff;
+  // build question pool: shuffle the chosen difficulty list and pick QUESTIONS_PER_GAME items
+  const pool = shuffleArray(difficulties[diff].slice());
+  const chosen = pool.slice(0, Math.min(QUESTIONS_PER_GAME, pool.length));
+  // build questions: each question {name: "..."} -- options will be generated per-render
+  questions = chosen.map(name => ({ name }));
+  currentQ = 0; score = 0;
+  scoreEl.innerText = score;
+  startCard.classList.add('hidden'); endCard.classList.add('hidden'); gameCard.classList.remove('hidden');
+  renderQ();
 }
 
-function loadQuestion() {
-  const data = quizData[currentCategory][currentIndex];
-  const progress = ((currentIndex) / quizData[currentCategory].length) * 100;
-  document.getElementById("progress-bar").style.width = progress + "%";
-  document.getElementById("feedback").innerText = "";
+// --- Render question ---
+async function renderQ(){
+  if(currentQ >= questions.length) return endGame();
+  const qObj = questions[currentQ];
+  updateProgress();
+  answersBox.innerHTML = '';
+  namePrompt.innerText = '';
+  anagramArea.classList.add('hidden');
+  mainImg.classList.add('hidden');
+  qHeader.innerText = (currentLang==='de') ? `Frage ${currentQ+1} von ${questions.length}` : `Question ${currentQ+1} of ${questions.length}`;
 
-  if (currentCategory === "bildName") {
-    document.getElementById("treeImage").src = data.image;
-    document.getElementById("question").innerText = data.question;
-    const optionsDiv = document.getElementById("options");
-    optionsDiv.innerHTML = "";
-    data.options.forEach(opt => {
-      const btn = document.createElement("button");
-      btn.className = "option-btn";
-      btn.innerText = opt;
-      btn.onclick = () => checkAnswer(opt, data.correct);
-      optionsDiv.appendChild(btn);
+  if(currentMode === 'img2name'){
+    // show image for qObj.name
+    const imgUrl = await fetchImageFor(qObj.name);
+    if(imgUrl){ mainImg.src = imgUrl; mainImg.classList.remove('hidden'); }
+    else { mainImg.classList.add('hidden'); }
+    // draw 4 name options (correct + 3 distractors)
+    const opts = makeOptions(qObj.name);
+    opts.forEach(opt => {
+      const b = document.createElement('div'); b.className='answer'; b.innerText = opt;
+      b.onclick = ()=> handleAnswer(opt === qObj.name, b);
+      answersBox.appendChild(b);
     });
-  }
-
-  if (currentCategory === "nameBild") {
-    document.getElementById("treeImage").style.display = "none";
-    document.getElementById("question").innerText = data.question;
-    const optionsDiv = document.getElementById("options");
-    optionsDiv.innerHTML = "";
-    data.options.forEach((url, i) => {
-      const imgBtn = document.createElement("button");
-      imgBtn.className = "option-btn";
-      imgBtn.innerHTML = `<img src="${url}" alt="Option">`;
-      imgBtn.onclick = () => checkAnswer(i, data.correct);
-      optionsDiv.appendChild(imgBtn);
-    });
-  }
-
-  if (currentCategory === "buchstaben") {
-    document.getElementById("treeImage").src = data.image;
-    document.getElementById("question").innerText = "Setze den Namen richtig zusammen:";
-    const optionsDiv = document.getElementById("options");
-    optionsDiv.innerHTML = "";
-    const shuffled = shuffle(data.correct.split(""));
-    shuffled.forEach(ch => {
-      const btn = document.createElement("button");
-      btn.className = "option-btn";
-      btn.innerText = ch;
-      btn.onclick = () => guessLetter(btn, data.correct);
-      optionsDiv.appendChild(btn);
-    });
-    guessedWord = "";
-  }
-}
-
-function checkAnswer(answer, correct) {
-  const feedback = document.getElementById("feedback");
-  if (answer === correct) {
-    score++;
-    feedback.innerText = "✅ Richtig!";
-  } else {
-    feedback.innerText = "❌ Falsch!";
-  }
-  setTimeout(nextQuestion, 800);
-}
-
-let guessedWord = "";
-
-function guessLetter(btn, correct) {
-  guessedWord += btn.innerText;
-  btn.disabled = true;
-  if (guessedWord.length === correct.length) {
-    if (guessedWord === correct) {
-      score++;
-      document.getElementById("feedback").innerText = "✅ Richtig!";
-    } else {
-      document.getElementById("feedback").innerText = "❌ Falsch!";
+  } else if(currentMode === 'name2img'){
+    // show the name, and 4 image options
+    namePrompt.innerText = qObj.name;
+    const opts = makeOptions(qObj.name);
+    for(const opt of opts){
+      const container = document.createElement('div'); container.className='answer';
+      const img = document.createElement('img'); img.style.maxWidth='100%'; img.style.borderRadius='8px'; img.alt = opt;
+      img.src = ''; // fill later
+      container.appendChild(img);
+      container.onclick = ()=> handleAnswer(opt === qObj.name, container);
+      answersBox.appendChild(container);
+      // load image
+      (async ()=>{
+        const url = await fetchImageFor(opt);
+        if(url) img.src = url;
+        else { img.style.display='none'; const note = document.createElement('div'); note.className='small'; note.innerText = (currentLang==='de') ? '(kein Bild)' : '(no image)'; container.appendChild(note); }
+      })();
     }
-    setTimeout(nextQuestion, 800);
+  } else if(currentMode === 'anagram'){
+    // show image and anagram letters
+    const imgUrl = await fetchImageFor(qObj.name);
+    if(imgUrl){ mainImg.src = imgUrl; mainImg.classList.remove('hidden'); } else mainImg.classList.add('hidden');
+    anagramArea.classList.remove('hidden');
+    setupAnagram(qObj.name);
   }
 }
 
-function nextQuestion() {
-  currentIndex++;
-  if (currentIndex < quizData[currentCategory].length) {
-    loadQuestion();
+// --- Make options: return array of 4 names (one correct) ---
+function makeOptions(correctName){
+  // build a pool from the current difficulty lists (all difficulties combined to provide distractors)
+  const pool = [...difficulties.easy, ...difficulties.medium, ...difficulties.hard].filter(n=>n!==correctName);
+  const shuffled = shuffleArray(pool);
+  const distractors = shuffled.slice(0,3);
+  const arr = shuffleArray([correctName, ...distractors]);
+  return arr;
+}
+
+// --- Handle answer selection ---
+function handleAnswer(isCorrect, element){
+  // disable further clicks
+  Array.from(answersBox.children).forEach(c=> c.onclick = null);
+  if(isCorrect){
+    element.classList.add('correct'); score++; scoreEl.innerText = score;
   } else {
-    showResult();
+    element.classList.add('wrong');
+    // highlight correct
+    Array.from(answersBox.children).forEach(c=>{
+      if(c.innerText && c.innerText.trim() === questions[currentQ].name) c.classList.add('correct');
+      const img = c.querySelector('img'); if(img && img.alt === questions[currentQ].name) c.classList.add('correct');
+    });
   }
+  document.getElementById('nextBtn').classList.remove('hidden');
 }
 
-function showResult() {
-  document.getElementById("quiz").style.display = "none";
-  document.getElementById("result").style.display = "block";
-  document.getElementById("score").innerText =
-    `Du hast ${score} von ${quizData[currentCategory].length} richtig beantwortet.`;
+function nextQ(){
+  currentQ++;
+  document.getElementById('nextBtn').classList.add('hidden');
+  if(currentQ >= questions.length) return endGame();
+  renderQ();
 }
 
-function goHome() {
-  document.getElementById("result").style.display = "none";
-  document.getElementById("home").style.display = "block";
+function endGame(){
+  gameCard.classList.add('hidden');
+  endCard.classList.remove('hidden');
+  document.getElementById('endTitle').innerText = (currentLang==='de') ? 'Ergebnis' : 'Result';
+  document.getElementById('endText').innerText = (currentLang==='de')
+    ? `Du hast ${score} von ${questions.length} richtig beantwortet.`
+    : `You answered ${score} of ${questions.length} correctly.`;
 }
 
-function shuffle(arr) {
-  return arr.sort(() => Math.random() - 0.5);
+function goHome(){
+  startCard.classList.remove('hidden'); gameCard.classList.add('hidden'); endCard.classList.add('hidden');
 }
+
+// --- Progress bar ---
+function updateProgress(){
+  const pct = Math.round((currentQ / questions.length) * 100);
+  bar.style.width = pct + '%';
+  progressText.innerText = (currentLang==='de') ? `Frage ${currentQ+1} / ${questions.length}` : `Question ${currentQ+1} / ${questions.length}`;
+}
+
+// --- ANAGRAM logic ---
+function setupAnagram(name){
+  anagramTarget.innerHTML = ''; anagramLetters.innerHTML = '';
+  // remove non-letter chars
+  const cleaned = name.replace(/[^\\p{L}]/gu, '');
+  const letters = cleaned.split('');
+  const shuffled = shuffleArray(letters.slice());
+  // create empty slots
+  for(let i=0;i<letters.length;i++){
+    const slot = document.createElement('div'); slot.className='letter-slot'; slot.style.minWidth='34px'; slot.style.minHeight='34px'; slot.style.border='1px solid #e6efe6'; slot.style.borderRadius='6px'; slot.style.display='inline-flex'; slot.style.alignItems='center'; slot.style.justifyContent='center'; slot.style.padding='6px'; anagramTarget.appendChild(slot);
+  }
+  shuffled.forEach(ch=>{
+    const b = document.createElement('div'); b.className='letter'; b.innerText = ch; b.onclick = ()=> placeLetter(b); anagramLetters.appendChild(b);
+  });
+  anagramTarget.dataset.answer = letters.join('');
+}
+
+function placeLetter(elem){
+  const slots = Array.from(anagramTarget.children);
+  const empty = slots.find(s => !s.dataset.placed);
+  if(!empty) return;
+  empty.innerText = elem.innerText;
+  empty.dataset.placed = '1';
+  elem.style.visibility = 'hidden';
+  checkAnagramComplete();
+}
+function resetAnagram(){
+  Array.from(anagramLetters.children).forEach(c=> c.style.visibility='visible');
+  Array.from(anagramTarget.children).forEach(s=>{ s.innerText=''; delete s.dataset.placed; });
+}
+function checkAnagramComplete(){
+  const slots = Array.from(anagramTarget.children);
+  if(slots.some(s => !s.dataset.placed)) return;
+  const formed = slots.map(s=>s.innerText).join('');
+  const ans = anagramTarget.dataset.answer;
+  if(formed === ans){ score++; scoreEl.innerText = score; document.getElementById('nextBtn').classList.remove('hidden'); anagramTarget.style.borderColor = '#16a34a'; }
+  else { anagramTarget.style.borderColor = '#dc2626'; setTimeout(()=> anagramTarget.style.borderColor='',800); }
+}
+
+// --- Utilities ---
+function shuffleArray(a){ return a.sort(()=>Math.random()-0.5); }
+
+// --- IMAGE FETCH (Wikimedia / de.wikipedia best-effort) ---
+async function fetchImageFor(name){
+  // try de.wikipedia REST search -> summary -> thumbnail
+  try{
+    const search = encodeURIComponent(name);
+    const searchUrl = `https://de.wikipedia.org/w/rest.php/v1/search/page?q=${search}&limit=3`;
+    const r = await fetch(searchUrl);
+    if(r.ok){
+      const j = await r.json();
+      if(j.pages && j.pages.length){
+        for(const p of j.pages){
+          try{
+            const sum = await fetch(`https://de.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(p.key)}`);
+            if(!sum.ok) continue;
+            const sjson = await sum.json();
+            if(sjson.thumbnail && sjson.thumbnail.source) return sjson.thumbnail.source;
+            if(sjson.originalimage && sjson.originalimage.source) return sjson.originalimage.source;
+          }catch(e){}
+        }
+      }
+    }
+    // fallback to Commons search
+    const commons = `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&generator=search&gsrsearch=${search}%20tree&gsrlimit=3&iiprop=url`;
+    const cr = await fetch(commons);
+    if(cr.ok){
+      const cj = await cr.json();
+      if(cj.query && cj.query.pages){
+        const pages = Object.values(cj.query.pages);
+        for(const p of pages){ if(p.imageinfo && p.imageinfo[0] && p.imageinfo[0].url) return p.imageinfo[0].url; }
+      }
+    }
+  }catch(e){
+    console.warn('image fetch error', e);
+  }
+  return null;
+}
+
 </script>
-
 </body>
 </html>
