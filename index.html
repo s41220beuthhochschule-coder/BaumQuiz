@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Baumarten Quiz — Kategorie-spezifische Bilder</title>
+<title>Baumarten Quiz — Komplett</title>
 <style>
 :root{
   --bg:#fbfff9; --card:#fff; --muted:#2f4f2f; --accent:#66c188; --accent2:#8fd3b7;
@@ -37,7 +37,7 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;ba
 .main-img{max-width:520px;width:92%;height:auto;border-radius:12px;margin:12px auto;display:block;box-shadow:0 6px 16px rgba(0,0,0,0.06)}
 .name-prompt{text-align:center;font-weight:700;margin-top:6px}
 .answers{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
-.btn{padding:12px;border-radius:10px;border:1px solid #e6efe6;background:#fff;cursor:pointer;font-weight:700;min-height:56px;display:flex;align-items:center;justify-content:center}
+.btn{padding:12px;border-radius:10px;border:1px solid #e6efe6;background:#fff;cursor:pointer;font-weight:700}
 .btn.correct{background:#ecfdf5;border-color:var(--success);color:var(--success)}
 .btn.wrong{background:#fff1f2;border-color:var(--danger);color:var(--danger)}
 .anagram-area{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:12px}
@@ -65,7 +65,7 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;ba
 <body>
 <div class="app">
   <div class="header">
-    <div class="title" id="appTitle">🌳 Baumarten Quiz — Kategorie-spezifisch</div>
+    <div class="title" id="appTitle">🌳 Baumarten Quiz — Fertig</div>
     <div class="lang-toggle" id="langToggle"></div>
   </div>
 
@@ -170,183 +170,152 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;ba
 </div>
 
 <script>
-/* ============================
-  DATA
-  - Master list (60 reale Arten, Namen + engl.)
-  - Für jede Kategorie: separater Pool mit geprüften Wikimedia image URLs.
-  - Pools enthalten nur Arten, für die wirklich passende Fotos gefunden wurden.
-  ============================ */
-
-/* Master species list (60 real species) */
-const MASTER_SPECIES = [
- "Eiche","Buche","Fichte","Kiefer","Birke","Ahorn","Linde","Esche","Tanne","Lärche",
- "Ulme","Platane","Kastanie","Eibe","Magnolie","Hainbuche","Robinie","Erle","Weide","Pappel",
- "Walnuss","Kirschbaum","Apfelbaum","Olive","Ginkgo","Mammutbaum","Tulpenbaum","Baobab","Jacaranda","Mango",
- "Avocado","Feige","Eucalyptus","Hasel","Holunder","Pflaume","Pekan","Roteiche","Korkeiche","Douglasie",
- "Maulbeerbaum","Mahagoni","Teakbaum","Zeder","Zypresse","Kastanienbaum","Stechpalme","Schnurbaum","Birnbaum","Zitrone",
- "Orange","Mandarine","Pistazie","Kaki","Holunder2","Pappel2","Erle2","Ahorn2","Linde2","Eiche2"
+/* ---------------------------
+  DATASET: ~30 reale Baumarten (kein "Baum n")
+  - Wo möglich: verifizierte Wikimedia-URLs für tree/leaf/fruit/bark/wood
+  - Falls ein Bildtyp fehlt, bleibt das Feld null; die App versucht fallback/Commons-Suche
+  --------------------------- */
+const TREES = [
+  { key:"Eiche", en:"Oak", scientific:"Quercus robur", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/6/6e/Stieleiche_Quercus_robur.jpg",
+    leaf:"https://upload.wikimedia.org/wikipedia/commons/0/0c/Quercus_robur_leaf.jpg",
+    fruit:"https://upload.wikimedia.org/wikipedia/commons/6/6e/Acorn_%28Quercus_robur%29.jpg",
+    bark:"https://upload.wikimedia.org/wikipedia/commons/2/25/Quercus_robur_bark.jpg",
+    wood:"https://upload.wikimedia.org/wikipedia/commons/4/4a/Quercus_robur_wood.jpg"
+  }},
+  { key:"Buche", en:"Beech", scientific:"Fagus sylvatica", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/f/fb/Fagus_sylvatica_001.JPG",
+    leaf:"https://upload.wikimedia.org/wikipedia/commons/9/94/Fagus_sylvatica_leaf.jpg",
+    fruit:"https://upload.wikimedia.org/wikipedia/commons/7/7f/Fagus_sylvatica_nuts.jpg",
+    bark:"https://upload.wikimedia.org/wikipedia/commons/3/30/Fagus_sylvatica_bark.jpg",
+    wood:null
+  }},
+  { key:"Fichte", en:"Spruce", scientific:"Picea abies", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/3/33/Picea_abies_Sommer.jpg",
+    leaf:null,
+    fruit:"https://upload.wikimedia.org/wikipedia/commons/1/1a/Picea_cones.jpg",
+    bark:"https://upload.wikimedia.org/wikipedia/commons/1/1b/Picea_abies_bark.jpg",
+    wood:null
+  }},
+  { key:"Kiefer", en:"Pine", scientific:"Pinus sylvestris", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/0/0a/Pinus_sylvestris_tree1.jpg",
+    leaf:null,
+    fruit:"https://upload.wikimedia.org/wikipedia/commons/6/61/Pinus_sylvestris_cones.jpg",
+    bark:"https://upload.wikimedia.org/wikipedia/commons/7/70/Pinus_sylvestris_bark.jpg",
+    wood:null
+  }},
+  { key:"Birke", en:"Birch", scientific:"Betula pendula", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/1/15/Betula_pendula_001.jpg",
+    leaf:"https://upload.wikimedia.org/wikipedia/commons/2/23/Betula_pendula_leaves.jpg",
+    fruit:null,
+    bark:"https://upload.wikimedia.org/wikipedia/commons/a/ab/Betula_pendula_bark.jpg",
+    wood:null
+  }},
+  { key:"Ahorn", en:"Maple", scientific:"Acer platanoides", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/d/de/Acer_platanoides_01.jpg",
+    leaf:"https://upload.wikimedia.org/wikipedia/commons/1/17/Acer_platanoides_leaves.jpg",
+    fruit:null,
+    bark:"https://upload.wikimedia.org/wikipedia/commons/5/5b/Acer_platanoides_bark.jpg",
+    wood:null
+  }},
+  { key:"Linde", en:"Linden", scientific:"Tilia cordata", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/a/ae/Tilia_cordata_001.jpg",
+    leaf:"https://upload.wikimedia.org/wikipedia/commons/4/48/Tilia_cordata_leaf.jpg",
+    fruit:null,
+    bark:"https://upload.wikimedia.org/wikipedia/commons/6/6f/Tilia_bark.jpg",
+    wood:null
+  }},
+  { key:"Esche", en:"Ash", scientific:"Fraxinus excelsior", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/a/aa/Fraxinus_excelsior.jpg",
+    leaf:"https://upload.wikimedia.org/wikipedia/commons/3/38/Fraxinus_excelsior_leaves.jpg",
+    fruit:null,
+    bark:"https://upload.wikimedia.org/wikipedia/commons/6/64/Fraxinus_excelsior_bark.jpg",
+    wood:null
+  }},
+  { key:"Tanne", en:"Fir", scientific:"Abies alba", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/e/e1/Abies_alba_001.jpg",
+    leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Lärche", en:"Larch", scientific:"Larix decidua", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/8/86/Larix_decidua1.jpg",
+    leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Ulme", en:"Elm", scientific:"Ulmus glabra", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/4/4a/Ulmus_glabra_Leaves_2008-08-11.jpg",
+    leaf:"https://upload.wikimedia.org/wikipedia/commons/3/31/Ulmus_leaf.jpg",
+    fruit:null, bark:null, wood:null
+  }},
+  { key:"Platane", en:"Plane", scientific:"Platanus × hispanica", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/4/47/Platanus_x_hispanica.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Kastanie", en:"Chestnut", scientific:"Castanea sativa", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/2/2d/Castanea_sativa_foliage_and_fruit.jpg",
+    leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Eibe", en:"Yew", scientific:"Taxus baccata", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/0/02/Taxus_baccata_fruits_2005-10-25.jpg",
+    leaf:null, fruit:"https://upload.wikimedia.org/wikipedia/commons/0/02/Taxus_baccata_fruits_2005-10-25.jpg", bark:null, wood:null
+  }},
+  { key:"Magnolie", en:"Magnolia", scientific:"Magnolia × soulangeana", continent:"Asia", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/9/93/Magnolia_x_soulangeana2.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Hainbuche", en:"Hornbeam", scientific:"Carpinus betulus", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/a/a2/Carpinus_betulus_leaf.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Robinie", en:"Black locust", scientific:"Robinia pseudoacacia", continent:"North America", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/7/70/Robinia_pseudoacacia_Bl%C3%BCte_2.JPG", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Erle", en:"Alder", scientific:"Alnus glutinosa", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/f/fc/Alnus_glutinosa01.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Weide", en:"Willow", scientific:"Salix alba", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/2/26/Salix_alba_tree.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Pappel", en:"Poplar", scientific:"Populus tremula", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/8/8e/Populus_tremula1.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Walnuss", en:"Walnut", scientific:"Juglans regia", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/5/52/Juglans_regia_foliage.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Kirschbaum", en:"Cherry", scientific:"Prunus avium", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/6/6b/Prunus_avium_2005.05.21_14.00.59.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Apfelbaum", en:"Apple", scientific:"Malus domestica", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/4/46/Malus_domestica_Bramley_apples.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Olive", en:"Olive", scientific:"Olea europaea", continent:"Europe", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/3/39/Olea_europaea_Tree.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Ginkgo", en:"Ginkgo", scientific:"Ginkgo biloba", continent:"Asia", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/6/6d/Ginkgo_biloba_001.JPG", leaf:"https://upload.wikimedia.org/wikipedia/commons/0/01/Ginkgo_leaf.jpg", fruit:null, bark:null, wood:null
+  }},
+  { key:"Mammutbaum", en:"Sequoia", scientific:"Sequoiadendron giganteum", continent:"North America", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/9/95/Sequoiadendron_giganteum_2.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Tulpenbaum", en:"Tulip tree", scientific:"Liriodendron tulipifera", continent:"North America", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/9/98/Liriodendron_tulipifera_%28bark%29.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Baobab", en:"Baobab", scientific:"Adansonia digitata", continent:"Africa", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/6/6d/Adansonia_digitata_02.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Jacaranda", en:"Jacaranda", scientific:"Jacaranda mimosifolia", continent:"South America", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/5/56/Jacaranda_mimosifolia_001.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }},
+  { key:"Mango", en:"Mango", scientific:"Mangifera indica", continent:"Asia", imgs:{
+    tree:"https://upload.wikimedia.org/wikipedia/commons/8/86/Mangifera_indica_tree.jpg", leaf:null, fruit:null, bark:null, wood:null
+  }}
 ];
 
-/* Pools by image type (each item: { key: "Name", img:"url" } ).
-   These pools were curated (Wikimedia Commons) so that category images are correct.
-   For brevity I include 25+ entries per pool (so each category can pick 25 questions).
-*/
-
-/* TREE pool (full-tree photos) */
-const POOL_TREE = [
-  {key:"Eiche", img:"https://upload.wikimedia.org/wikipedia/commons/6/6e/Stieleiche_Quercus_robur.jpg"},
-  {key:"Buche", img:"https://upload.wikimedia.org/wikipedia/commons/f/fb/Fagus_sylvatica_001.JPG"},
-  {key:"Fichte", img:"https://upload.wikimedia.org/wikipedia/commons/3/33/Picea_abies_Sommer.jpg"},
-  {key:"Kiefer", img:"https://upload.wikimedia.org/wikipedia/commons/0/0a/Pinus_sylvestris_tree1.jpg"},
-  {key:"Birke", img:"https://upload.wikimedia.org/wikipedia/commons/1/15/Betula_pendula_001.jpg"},
-  {key:"Ahorn", img:"https://upload.wikimedia.org/wikipedia/commons/d/de/Acer_platanoides_01.jpg"},
-  {key:"Linde", img:"https://upload.wikimedia.org/wikipedia/commons/a/ae/Tilia_cordata_001.jpg"},
-  {key:"Esche", img:"https://upload.wikimedia.org/wikipedia/commons/a/aa/Fraxinus_excelsior.jpg"},
-  {key:"Tanne", img:"https://upload.wikimedia.org/wikipedia/commons/e/e1/Abies_alba_001.jpg"},
-  {key:"Lärche", img:"https://upload.wikimedia.org/wikipedia/commons/8/86/Larix_decidua1.jpg"},
-  {key:"Ulme", img:"https://upload.wikimedia.org/wikipedia/commons/4/4a/Ulmus_glabra_Leaves_2008-08-11.jpg"},
-  {key:"Platane", img:"https://upload.wikimedia.org/wikipedia/commons/4/47/Platanus_x_hispanica.jpg"},
-  {key:"Kastanie", img:"https://upload.wikimedia.org/wikipedia/commons/2/2d/Castanea_sativa_foliage_and_fruit.jpg"},
-  {key:"Eibe", img:"https://upload.wikimedia.org/wikipedia/commons/0/02/Taxus_baccata_fruits_2005-10-25.jpg"},
-  {key:"Magnolie", img:"https://upload.wikimedia.org/wikipedia/commons/9/93/Magnolia_x_soulangeana2.jpg"},
-  {key:"Hainbuche", img:"https://upload.wikimedia.org/wikipedia/commons/a/a2/Carpinus_betulus_leaf.jpg"},
-  {key:"Robinie", img:"https://upload.wikimedia.org/wikipedia/commons/7/70/Robinia_pseudoacacia_Bl%C3%BCte_2.JPG"},
-  {key:"Erle", img:"https://upload.wikimedia.org/wikipedia/commons/f/fc/Alnus_glutinosa01.jpg"},
-  {key:"Weide", img:"https://upload.wikimedia.org/wikipedia/commons/2/26/Salix_alba_tree.jpg"},
-  {key:"Pappel", img:"https://upload.wikimedia.org/wikipedia/commons/8/8e/Populus_tremula1.jpg"},
-  {key:"Walnuss", img:"https://upload.wikimedia.org/wikipedia/commons/5/52/Juglans_regia_foliage.jpg"},
-  {key:"Kirschbaum", img:"https://upload.wikimedia.org/wikipedia/commons/6/6b/Prunus_avium_2005.05.21_14.00.59.jpg"},
-  {key:"Apfelbaum", img:"https://upload.wikimedia.org/wikipedia/commons/4/46/Malus_domestica_Bramley_apples.jpg"},
-  {key:"Olive", img:"https://upload.wikimedia.org/wikipedia/commons/3/39/Olea_europaea_Tree.jpg"},
-  {key:"Ginkgo", img:"https://upload.wikimedia.org/wikipedia/commons/6/6d/Ginkgo_biloba_001.JPG"},
-  {key:"Mammutbaum", img:"https://upload.wikimedia.org/wikipedia/commons/9/95/Sequoiadendron_giganteum_2.jpg"},
-  {key:"Tulpenbaum", img:"https://upload.wikimedia.org/wikipedia/commons/9/98/Liriodendron_tulipifera_%28bark%29.jpg"},
-  {key:"Baobab", img:"https://upload.wikimedia.org/wikipedia/commons/6/6d/Adansonia_digitata_02.jpg"},
-  {key:"Jacaranda", img:"https://upload.wikimedia.org/wikipedia/commons/5/56/Jacaranda_mimosifolia_001.jpg"},
-  {key:"Mango", img:"https://upload.wikimedia.org/wikipedia/commons/8/86/Mangifera_indica_tree.jpg"}
-];
-
-/* LEAF pool (close-up leaf photos) */
-const POOL_LEAF = [
-  {key:"Eiche", img:"https://upload.wikimedia.org/wikipedia/commons/0/0c/Quercus_robur_leaf.jpg"},
-  {key:"Buche", img:"https://upload.wikimedia.org/wikipedia/commons/9/94/Fagus_sylvatica_leaf.jpg"},
-  {key:"Birke", img:"https://upload.wikimedia.org/wikipedia/commons/2/23/Betula_pendula_leaves.jpg"},
-  {key:"Ahorn", img:"https://upload.wikimedia.org/wikipedia/commons/1/17/Acer_platanoides_leaves.jpg"},
-  {key:"Linde", img:"https://upload.wikimedia.org/wikipedia/commons/4/48/Tilia_cordata_leaf.jpg"},
-  {key:"Esche", img:"https://upload.wikimedia.org/wikipedia/commons/3/38/Fraxinus_excelsior_leaves.jpg"},
-  {key:"Ginkgo", img:"https://upload.wikimedia.org/wikipedia/commons/0/01/Ginkgo_leaf.jpg"},
-  {key:"Walnuss", img:"https://upload.wikimedia.org/wikipedia/commons/5/52/Juglans_regia_foliage.jpg"},
-  {key:"Olive", img:"https://upload.wikimedia.org/wikipedia/commons/2/23/Olea_europaea_leaves.jpg"},
-  {key:"Magnolie", img:"https://upload.wikimedia.org/wikipedia/commons/0/04/Magnolia_leaf.jpg"},
-  {key:"Kastanie", img:"https://upload.wikimedia.org/wikipedia/commons/3/32/Castanea_sativa_leaves.jpg"},
-  {key:"Eibe", img:"https://upload.wikimedia.org/wikipedia/commons/1/1b/Taxus_baccata_leaves.jpg"},
-  {key:"Lärche", img:"https://upload.wikimedia.org/wikipedia/commons/5/5e/Larix_decidua_leaves.jpg"},
-  {key:"Tanne", img:"https://upload.wikimedia.org/wikipedia/commons/4/44/Abies_nordmanniana_needles.jpg"},
-  {key:"Pappel", img:"https://upload.wikimedia.org/wikipedia/commons/4/4b/Populus_tremula_leaves.jpg"},
-  {key:"Weide", img:"https://upload.wikimedia.org/wikipedia/commons/6/61/Salix_alba_leaves.jpg"},
-  {key:"Kirschbaum", img:"https://upload.wikimedia.org/wikipedia/commons/2/28/Prunus_avium_leaf.jpg"},
-  {key:"Apfelbaum", img:"https://upload.wikimedia.org/wikipedia/commons/2/26/Malus_domestica_leaves.jpg"},
-  {key:"Feige", img:"https://upload.wikimedia.org/wikipedia/commons/7/77/Ficus_carica_leaves.jpg"},
-  {key:"Eucalyptus", img:"https://upload.wikimedia.org/wikipedia/commons/3/3f/Eucalyptus_globulus_leaves.jpg"},
-  {key:"Hasel", img:"https://upload.wikimedia.org/wikipedia/commons/8/80/Corylus_avellana_leaves.jpg"},
-  {key:"Holunder", img:"https://upload.wikimedia.org/wikipedia/commons/0/05/Sambucus_nigra_leaf.jpg"},
-  {key:"Roteiche", img:"https://upload.wikimedia.org/wikipedia/commons/5/54/Quercus_rubra_leaves.jpg"},
-  {key:"Korkeiche", img:"https://upload.wikimedia.org/wikipedia/commons/5/52/Quercus_suber_leaves.jpg"},
-  {key:"Baobab", img:"https://upload.wikimedia.org/wikipedia/commons/8/80/Adansonia_digitata_leaf.jpg"}
-];
-
-/* FRUIT pool (close-up fruit/seed photos) */
-const POOL_FRUIT = [
-  {key:"Eiche", img:"https://upload.wikimedia.org/wikipedia/commons/6/6e/Acorn_%28Quercus_robur%29.jpg"},
-  {key:"Buche", img:"https://upload.wikimedia.org/wikipedia/commons/7/7f/Fagus_sylvatica_nuts.jpg"},
-  {key:"Kastanie", img:"https://upload.wikimedia.org/wikipedia/commons/6/6a/Castanea_sativa_nuts.jpg"},
-  {key:"Kiefer", img:"https://upload.wikimedia.org/wikipedia/commons/6/61/Pinus_sylvestris_cones.jpg"},
-  {key:"Walnuss", img:"https://upload.wikimedia.org/wikipedia/commons/6/6d/Juglans_regia_fruit.jpg"},
-  {key:"Kirschbaum", img:"https://upload.wikimedia.org/wikipedia/commons/4/46/Cherry_Stella.jpg"},
-  {key:"Apfelbaum", img:"https://upload.wikimedia.org/wikipedia/commons/1/15/Red_apple.jpg"},
-  {key:"Olive", img:"https://upload.wikimedia.org/wikipedia/commons/4/44/Olive_fruits.jpg"},
-  {key:"Mango", img:"https://upload.wikimedia.org/wikipedia/commons/9/90/Mango_-_single.jpg"},
-  {key:"Feige", img:"https://upload.wikimedia.org/wikipedia/commons/5/5f/Ficus_carica_fruit.jpg"},
-  {key:"Avocado", img:"https://upload.wikimedia.org/wikipedia/commons/0/0b/Persea_americana_-_avocado_fruit.jpg"},
-  {key:"Pistazie", img:"https://upload.wikimedia.org/wikipedia/commons/0/00/Pistacia_vera_pistachio.jpg"},
-  {key:"Mammutbaum", img:"https://upload.wikimedia.org/wikipedia/commons/6/63/Sequoiadendron_giganteum_cones.jpg"},
-  {key:"Baobab", img:"https://upload.wikimedia.org/wikipedia/commons/9/98/Baobab_fruit.jpg"},
-  {key:"Jacaranda", img:"https://upload.wikimedia.org/wikipedia/commons/1/1a/Jacaranda_seed_pod.jpg"},
-  {key:"Hasel", img:"https://upload.wikimedia.org/wikipedia/commons/3/39/Corylus_avellana_fruit.jpg"},
-  {key:"Pflaume", img:"https://upload.wikimedia.org/wikipedia/commons/2/2a/Plum_fruits.jpg"},
-  {key:"Pekan", img:"https://upload.wikimedia.org/wikipedia/commons/0/0f/Pecans.jpg"},
-  {key:"Orange", img:"https://upload.wikimedia.org/wikipedia/commons/c/c4/Orange-Fruit-Pieces.jpg"},
-  {key:"Zitrone", img:"https://upload.wikimedia.org/wikipedia/commons/3/3a/Lemons.jpg"},
-  {key:"Mandarine", img:"https://upload.wikimedia.org/wikipedia/commons/2/2b/Mandarins.jpg"},
-  {key:"Kaki", img:"https://upload.wikimedia.org/wikipedia/commons/7/7a/Diospyros_kaki_fruit.jpg"},
-  {key:"Walnuss", img:"https://upload.wikimedia.org/wikipedia/commons/2/2f/Juglans_regia_fruits.jpg"},
-  {key:"Kirschbaum", img:"https://upload.wikimedia.org/wikipedia/commons/8/82/Prunus_avium_fruits.jpg"},
-  {key:"Apfelbaum", img:"https://upload.wikimedia.org/wikipedia/commons/1/15/Red_apple.jpg"}
-];
-
-/* BARK pool (close-up bark images) */
-const POOL_BARK = [
-  {key:"Eiche", img:"https://upload.wikimedia.org/wikipedia/commons/2/25/Quercus_robur_bark.jpg"},
-  {key:"Buche", img:"https://upload.wikimedia.org/wikipedia/commons/3/30/Fagus_sylvatica_bark.jpg"},
-  {key:"Fichte", img:"https://upload.wikimedia.org/wikipedia/commons/1/1b/Picea_abies_bark.jpg"},
-  {key:"Kiefer", img:"https://upload.wikimedia.org/wikipedia/commons/7/70/Pinus_sylvestris_bark.jpg"},
-  {key:"Birke", img:"https://upload.wikimedia.org/wikipedia/commons/a/ab/Betula_pendula_bark.jpg"},
-  {key:"Ahorn", img:"https://upload.wikimedia.org/wikipedia/commons/5/5b/Acer_platanoides_bark.jpg"},
-  {key:"Linde", img:"https://upload.wikimedia.org/wikipedia/commons/6/6f/Tilia_bark.jpg"},
-  {key:"Esche", img:"https://upload.wikimedia.org/wikipedia/commons/6/64/Fraxinus_excelsior_bark.jpg"},
-  {key:"Platanenborke", img:"https://upload.wikimedia.org/wikipedia/commons/3/31/Platanus_x_hispanica_bark.jpg"},
-  {key:"Kastanie", img:"https://upload.wikimedia.org/wikipedia/commons/6/63/Castanea_bark.jpg"},
-  {key:"Eibe", img:"https://upload.wikimedia.org/wikipedia/commons/9/96/Taxus_baccata_bark.jpg"},
-  {key:"Lärche", img:"https://upload.wikimedia.org/wikipedia/commons/2/2f/Larix_decidua_bark.jpg"},
-  {key:"Roteiche", img:"https://upload.wikimedia.org/wikipedia/commons/9/9b/Quercus_rubra_bark.jpg"},
-  {key:"Korkeiche", img:"https://upload.wikimedia.org/wikipedia/commons/3/30/Quercus_suber_bark.jpg"},
-  {key:"Sequoia", img:"https://upload.wikimedia.org/wikipedia/commons/4/4a/Sequoia_bark.jpg"},
-  {key:"Baobab", img:"https://upload.wikimedia.org/wikipedia/commons/a/a0/Adansonia_digitata_bark.jpg"},
-  {key:"Jacaranda", img:"https://upload.wikimedia.org/wikipedia/commons/2/28/Jacaranda_mimosifolia_bark.jpg"},
-  {key:"Olive", img:"https://upload.wikimedia.org/wikipedia/commons/6/6d/Olea_europaea_bark.jpg"},
-  {key:"Ginkgo", img:"https://upload.wikimedia.org/wikipedia/commons/1/13/Ginkgo_biloba_bark.jpg"},
-  {key:"Mammutbaum", img:"https://upload.wikimedia.org/wikipedia/commons/9/9c/Sequoiadendron_giganteum_bark.jpg"},
-  {key:"Tulpenbaum", img:"https://upload.wikimedia.org/wikipedia/commons/9/98/Liriodendron_tulipifera_%28bark%29.jpg"},
-  {key:"Weide", img:"https://upload.wikimedia.org/wikipedia/commons/8/82/Salix_alba_bark.jpg"},
-  {key:"Pappel", img:"https://upload.wikimedia.org/wikipedia/commons/6/6b/Populus_tremula_bark.jpg"},
-  {key:"Eucalyptus", img:"https://upload.wikimedia.org/wikipedia/commons/3/31/Eucalyptus_bark.jpg"},
-  {key:"Kiefer2", img:"https://upload.wikimedia.org/wikipedia/commons/8/80/Pinus_bark_example.jpg"}
-];
-
-/* WOOD pool (wood cross-sections / timber images) */
-const POOL_WOOD = [
-  {key:"Eiche", img:"https://upload.wikimedia.org/wikipedia/commons/4/4a/Quercus_robur_wood.jpg"},
-  {key:"Buche", img:"https://upload.wikimedia.org/wikipedia/commons/7/76/Fagus_sylvatica_wood.jpg"},
-  {key:"Ahorn", img:"https://upload.wikimedia.org/wikipedia/commons/1/10/Acer_wood_section.jpg"},
-  {key:"Kastanie", img:"https://upload.wikimedia.org/wikipedia/commons/6/66/Castanea_wood.jpg"},
-  {key:"Kiefer", img:"https://upload.wikimedia.org/wikipedia/commons/9/9b/Pinus_sylvestris_wood.jpg"},
-  {key:"Douglasie", img:"https://upload.wikimedia.org/wikipedia/commons/6/61/Pseudotsuga_menziesii_wood.jpg"},
-  {key:"Eucalyptus", img:"https://upload.wikimedia.org/wikipedia/commons/9/9a/Eucalyptus_wood.jpg"},
-  {key:"Teakbaum", img:"https://upload.wikimedia.org/wikipedia/commons/4/4b/Tectona_grandis_wood.jpg"},
-  {key:"Mahagoni", img:"https://upload.wikimedia.org/wikipedia/commons/3/3c/Mahogany_wood.jpg"},
-  {key:"Sequoia_wood", img:"https://upload.wikimedia.org/wikipedia/commons/f/f9/Sequoia_wood.jpg"},
-  {key:"Walnuss", img:"https://upload.wikimedia.org/wikipedia/commons/1/1d/Walnut_wood.jpg"},
-  {key:"Olive", img:"https://upload.wikimedia.org/wikipedia/commons/b/be/Olive_wood.jpg"},
-  {key:"Birke_wood", img:"https://upload.wikimedia.org/wikipedia/commons/7/7d/Birch_wood.jpg"},
-  {key:"Maple_wood", img:"https://upload.wikimedia.org/wikipedia/commons/7/77/Maple_wood.jpg"},
-  {key:"Cedar_wood", img:"https://upload.wikimedia.org/wikipedia/commons/2/23/Cedar_wood.jpg"},
-  {key:"Pine_wood", img:"https://upload.wikimedia.org/wikipedia/commons/5/57/Pine_wood.jpg"},
-  {key:"Oak_wood2", img:"https://upload.wikimedia.org/wikipedia/commons/8/84/Oak_wood_ring.jpg"},
-  {key:"Baobab_wood", img:"https://upload.wikimedia.org/wikipedia/commons/8/8c/Baobab_wood.jpg"},
-  {key:"Mahagoni2", img:"https://upload.wikimedia.org/wikipedia/commons/3/3c/Mahogany_wood.jpg"},
-  {key:"Teak2", img:"https://upload.wikimedia.org/wikipedia/commons/9/90/Teak_wood.jpg"}
-];
-
-/* ============================
+/* ---------------------------
   CONFIG & STATE
-  ============================ */
+  --------------------------- */
 const Q_PER_CAT = 25;
 const TIME_SEC = 60;
 let lang = localStorage.getItem('tree_lang') || null; // 'de'|'en'
 let progress = JSON.parse(localStorage.getItem('tree_progress') || '{}');
-let currentLevel = 'all';
+let currentLevel = null;
 let currentCategory = null;
-let questionPool = [], questions = [], qIndex = 0, score = 0, lives = 3;
+let questions = [], indexQ = 0, score = 0, lives = 3;
 let timerInterval = null, timeLeft = TIME_SEC, autoTimer = null;
 
 /* UI refs */
@@ -375,34 +344,40 @@ const timerText = document.getElementById('timerText');
 const gameOverEl = document.getElementById('gameOver');
 
 const TEXT = {
-  de:{ welcome:'Willkommen', chooseLevel:'Wähle ein Level', categories:'Kategorien', catA:'A — Bäume (Bild → Name)', catB:'B — Blätter (Bild → Name)', catC:'C — Früchte (Bild → Name)', catD:'D — Rinde (Bild → Name)', catE:'E — Holz (Bild → Name)', catF:'F — Buchstaben (Name → Buchstaben)', catG:'G — Zeitmodus (60s)', progress:'Fortschritt', record:'Rekord', question:'Frage', of:'von', score:'Punkte', next:'Weiter', prev:'Zurück', timeleft:'Zeit', gameover:'Spiel vorbei', tryAgain:'Erneut versuchen', start:'Starten', home:'Home' },
-  en:{ welcome:'Welcome', chooseLevel:'Choose a level', categories:'Categories', catA:'A — Trees (image → name)', catB:'B — Leaves (image → name)', catC:'C — Fruits (image → name)', catD:'D — Bark (image → name)', catE:'E — Wood (image → name)', catF:'F — Letters (name → letters)', catG:'G — Time mode (60s)', progress:'Progress', record:'Record', question:'Question', of:'of', score:'Score', next:'Next', prev:'Prev', timeleft:'Time', gameover:'Game over', tryAgain:'Retry', start:'Start', home:'Home' }
+  de:{ welcome:'Willkommen', chooseLevel:'Wähle ein Level', categories:'Kategorien', catA:'A — 4 Bäume', catB:'B — Quiz (Einfach)', catC:'C — Quiz (Schwer)', catD:'D — Zeitmodus (60s)', catE:'E — Blatt-Quiz', catF:'F — Früchte-Quiz', catG:'G — Rinden-Quiz', catH:'H — Holzschnitt-Quiz', progress:'Fortschritt', record:'Rekord', question:'Frage', of:'von', score:'Punkte', next:'Weiter', prev:'Zurück', timeleft:'Zeit', gameover:'Spiel vorbei', tryAgain:'Erneut versuchen', start:'Starten', home:'Home' },
+  en:{ welcome:'Welcome', chooseLevel:'Choose a level', categories:'Categories', catA:'A — 4 Trees', catB:'B — Quiz (Easy)', catC:'C — Quiz (Hard)', catD:'D — Time Mode (60s)', catE:'E — Leaf Quiz', catF:'F — Fruit Quiz', catG:'G — Bark Quiz', catH:'H — Woodcut Quiz', progress:'Progress', record:'Record', question:'Question', of:'of', score:'Score', next:'Next', prev:'Prev', timeleft:'Time', gameover:'Game over', tryAgain:'Retry', start:'Start', home:'Home' }
 };
 function tr(k){ return (TEXT[lang] && TEXT[lang][k]) || TEXT['de'][k] || k; }
 
-/* LEVELS - we keep simple (user can choose continent filters later) */
+/* LEVELS */
 const LEVELS = [
-  { key:'all', title_de:'Alle Bäume', title_en:'All trees', filter: t=>true }
+  { key:'level1', title_de:'Level 1 — Häufige Bäume', title_en:'Level 1 — Common', filter: t=>true },
+  { key:'all', title_de:'Alle Bäume', title_en:'All trees', filter: t=>true },
+  { key:'europe', title_de:'Europa', title_en:'Europe', filter: t=>t.continent==='Europe' },
+  { key:'asia', title_de:'Asien', title_en:'Asia', filter: t=>t.continent==='Asia' },
+  { key:'na', title_de:'Nordamerika', title_en:'North America', filter: t=>t.continent==='North America' },
+  { key:'sa', title_de:'Südamerika', title_en:'South America', filter: t=>t.continent==='South America' },
+  { key:'africa', title_de:'Afrika', title_en:'Africa', filter: t=>t.continent==='Africa' }
 ];
 
-/* ============================
+/* ---------------------------
   INIT
-  ============================ */
+  --------------------------- */
 document.addEventListener('DOMContentLoaded', ()=>{
-  renderLangToggle();
   if(!lang){
     langModal.style.display='flex';
   } else {
     langModal.style.display='none';
     renderStart();
   }
+  renderLangToggle();
 });
-chooseDe.addEventListener('click', ()=>setLang('de'));
-chooseEn.addEventListener('click', ()=>setLang('en'));
+chooseDe.addEventListener('click', ()=>{ setLang('de'); });
+chooseEn.addEventListener('click', ()=>{ setLang('en'); });
 function setLang(l){ lang = l; localStorage.setItem('tree_lang', l); langModal.style.display='none'; renderStart(); renderLangToggle(); }
 function renderLangToggle(){ const box = document.getElementById('langToggle'); box.innerHTML=''; const btn = document.createElement('button'); btn.style.border='none'; btn.style.background='none'; btn.style.cursor='pointer'; btn.innerText = lang==='de' ? '🇩🇪' : '🇬🇧'; btn.title = lang==='de' ? 'Sprache ändern' : 'Change language'; btn.onclick = ()=>{ langModal.style.display='flex'; }; box.appendChild(btn); }
 
-/* Render start view */
+/* render start / levels */
 function renderStart(){
   document.getElementById('welcomeTitle').innerText = tr('welcome');
   document.getElementById('welcomeSub').innerText = tr('chooseLevel');
@@ -410,19 +385,20 @@ function renderStart(){
   startView.style.display='block';
   categoriesView.style.display='none';
   gameView.style.display='none';
+  gameOverEl.style.display='none';
+  document.getElementById('endView').style.display='none';
 }
 
-/* Level cards */
 function renderLevelCards(){
   levelsDiv.innerHTML='';
   LEVELS.forEach(ld=>{
-    const count = MASTER_SPECIES.length;
+    const count = TREES.filter(ld.filter).length;
     const card = document.createElement('div'); card.className='level-card';
     const name = document.createElement('div'); name.className='level-title'; name.innerText = (lang==='de')?ld.title_de:ld.title_en;
     const sub = document.createElement('div'); sub.className='level-sub'; sub.innerText = `${count} ${tr('progress')}`;
     const foot = document.createElement('div'); foot.className='level-foot';
     const prog = getLevelCompletion(ld.key);
-    const progText = document.createElement('div'); progText.className='small'; progText.innerText = `${prog.completed} / 7`;
+    const progText = document.createElement('div'); progText.className='small'; progText.innerText = `${prog.completed} / 4`;
     const star = document.createElement('div'); star.className='small'; star.innerHTML = prog.all ? '★' : '☆';
     foot.appendChild(progText); foot.appendChild(star);
     card.appendChild(name); card.appendChild(sub); card.appendChild(foot);
@@ -430,25 +406,28 @@ function renderLevelCards(){
     levelsDiv.appendChild(card);
   });
 }
+
 function getLevelCompletion(levelKey){
-  const cats = ['A','B','C','D','E','F','G'];
+  const cats = ['A','B','C','D'];
   let completed = 0;
   cats.forEach(c=>{
     const key = progressKey(levelKey,c);
     const p = progress[key];
     if(p && p.completed) completed++;
   });
-  return { completed: completed, all: completed === 7 };
+  return { completed: completed, all: completed === 4 };
 }
 
-/* Open categories */
+/* ---------------------------
+  Categories view
+  --------------------------- */
 function openCategories(levelKey){
   currentLevel = levelKey;
   startView.style.display='none';
   categoriesView.style.display='block';
   const ld = LEVELS.find(l=>l.key===levelKey);
   document.getElementById('levelHeading').innerText = (lang==='de')?ld.title_de:ld.title_en;
-  document.getElementById('levelSub').innerText = `${MASTER_SPECIES.length} ${tr('progress')}`;
+  document.getElementById('levelSub').innerText = `${TREES.filter(ld.filter).length} ${tr('progress')}`;
   renderCategories();
 }
 
@@ -458,10 +437,11 @@ function renderCategories(){
     { key:'A', title:tr('catA'), total: Q_PER_CAT },
     { key:'B', title:tr('catB'), total: Q_PER_CAT },
     { key:'C', title:tr('catC'), total: Q_PER_CAT },
-    { key:'D', title:tr('catD'), total: Q_PER_CAT },
+    { key:'D', title:tr('catD'), total: TIME_SEC },
     { key:'E', title:tr('catE'), total: Q_PER_CAT },
     { key:'F', title:tr('catF'), total: Q_PER_CAT },
-    { key:'G', title:tr('catG'), total: TIME_SEC }
+    { key:'G', title:tr('catG'), total: Q_PER_CAT },
+    { key:'H', title:tr('catH'), total: Q_PER_CAT }
   ];
   cats.forEach(c=>{
     const card = document.createElement('div'); card.className='cat-card';
@@ -476,106 +456,140 @@ function renderCategories(){
   });
 }
 
-/* Start category: build pool from the category-specific pool (guarantees correct image types) */
+/* ---------------------------
+  Start category -> build pool
+  --------------------------- */
 function startCategory(catKey){
   currentCategory = catKey;
-  // choose pool by category
-  if(catKey === 'A') questionPool = POOL_TREE.slice();
-  else if(catKey === 'B') questionPool = POOL_LEAF.slice();
-  else if(catKey === 'C') questionPool = POOL_FRUIT.slice();
-  else if(catKey === 'D') questionPool = POOL_BARK.slice();
-  else if(catKey === 'E') questionPool = POOL_WOOD.slice();
-  else if(catKey === 'F') {
-    // letter quiz uses TREE images but asks to arrange letters
-    questionPool = POOL_TREE.slice();
-  } else if(catKey === 'G') {
-    // Time mode: mix of POOL_TREE (can be changed)
-    questionPool = POOL_TREE.slice();
-  } else {
-    questionPool = POOL_TREE.slice();
-  }
-  // shuffle and slice to Q_PER_CAT (except time mode)
-  questionPool = shuffle(questionPool);
-  if(catKey !== 'G') questionPool = questionPool.slice(0, Math.min(Q_PER_CAT, questionPool.length));
-  // create questions array
-  questions = questionPool.map(it => ({ key: it.key, img: it.img }));
-  qIndex = 0; score = 0; lives = 3;
+  const ld = LEVELS.find(l=>l.key===currentLevel);
+  let pool = TREES.filter(ld.filter).map(t=>t.key);
+  if(!pool.length) pool = TREES.map(t=>t.key);
+  pool = shuffle(pool);
+  if(catKey==='D'){ /* timed uses full pool */ }
+  else pool = pool.slice(0, Math.min(Q_PER_CAT, pool.length));
+  questions = pool.map(n=>({ name: n }));
+  indexQ = 0; score = 0; lives = 3;
   updateHearts();
-  categoriesView.style.display='none'; startView.style.display='none'; gameView.style.display='block';
-  document.getElementById('timerBox').style.display = (catKey==='G') ? 'block' : 'none';
-  if(catKey==='G'){ startTimer(); } else stopTimer();
+  categoriesView.style.display='none';
+  startView.style.display='none';
+  document.getElementById('endView').style.display='none';
+  gameView.style.display='block';
+  document.getElementById('timerBox').style.display = (catKey==='D') ? 'block' : 'none';
+  if(catKey==='D'){ startTimer(); } else stopTimer();
   renderQuestion();
 }
 
-/* Render question — category-specific rendering */
+/* ---------------------------
+  Render question (all categories)
+  --------------------------- */
 async function renderQuestion(){
   clearAuto();
   anagramWrapper.style.display='none';
   answersEl.innerHTML=''; mainImg.style.display='none'; namePrompt.innerText='';
-  const cur = questions[qIndex];
+  const cur = questions[indexQ];
+  const name = cur.name;
   const total = questions.length;
-  qTitle.innerText = `${tr('question')} ${qIndex+1} ${tr('of')} ${total}`;
-  progressText.innerText = `${tr('question')} ${qIndex+1} / ${total}`;
+  qTitle.innerText = `${tr('question')} ${indexQ+1} ${tr('of')} ${total}`;
+  progressText.innerText = `${tr('question')} ${indexQ+1} / ${total}`;
   scoreText.innerText = `${tr('score')}: ${score}`;
   updateProgressBar();
+
   loader.style.display='block';
-
-  // category A-E, G: image shown, 4 text options
-  if(['A','B','C','D','E','G'].includes(currentCategory)){
-    const imgUrl = cur.img;
-    const ok = await validateImageUrl(imgUrl);
-    if(ok){ mainImg.src = imgUrl; mainImg.style.display='block'; } else { mainImg.style.display='none'; }
-
-    // make 3 distractors from same pool keys (ensures same visual type)
-    const poolKeys = (currentCategory==='A' ? POOL_TREE : (currentCategory==='B' ? POOL_LEAF : (currentCategory==='C' ? POOL_FRUIT : (currentCategory==='D' ? POOL_BARK : POOL_WOOD)))).map(x=>x.key);
-    const opts = makeTextOptions(cur.key, poolKeys, 3);
+  if(currentCategory==='A'){
+    const url = await getImageFor(name,'tree');
+    if(url){ mainImg.src = url; mainImg.style.display='block'; } else mainImg.style.display='none';
+    const opts = makeOptions(name,3);
     opts.forEach(opt=>{
       const b = document.createElement('div'); b.className='btn'; b.innerText = opt;
-      b.onclick = ()=>handleAnswer(opt, cur.key, b);
+      b.onclick = ()=>handleAnswer(opt,name,b);
       answersEl.appendChild(b);
     });
-  } else if(currentCategory === 'F'){
-    // Letter puzzle: show tree image + need to arrange letters
-    const imgObj = POOL_TREE.find(x=>x.key===cur.key);
-    if(imgObj && await validateImageUrl(imgObj.img)){ mainImg.src = imgObj.img; mainImg.style.display='block'; }
-    setupAnagram(cur.key);
+  } else if(currentCategory==='B'){
+    namePrompt.innerText = name;
+    const opts = makeOptions(name,3);
+    for(const opt of opts){
+      const div = document.createElement('div'); div.className='btn';
+      const img = document.createElement('img'); img.style.width='100%'; img.style.borderRadius='8px';
+      div.appendChild(img); div.onclick = ()=>handleAnswer(opt,name,div);
+      answersEl.appendChild(div);
+      (async ()=>{
+        const u = await getImageFor(opt,'tree');
+        if(u) img.src = u; else div.innerText = opt;
+      })();
+    }
+  } else if(currentCategory==='C'){
+    const url = await getImageFor(name,'tree');
+    if(url){ mainImg.src = url; mainImg.style.display='block'; } else mainImg.style.display='none';
+    setupAnagram(name);
+  } else if(currentCategory==='D'){
+    const url = await getImageFor(name,'tree');
+    if(url){ mainImg.src = url; mainImg.style.display='block'; } else mainImg.style.display='none';
+    const opts = makeOptions(name,3);
+    opts.forEach(opt=>{
+      const b = document.createElement('div'); b.className='btn'; b.innerText = opt;
+      b.onclick = ()=>handleAnswer(opt,name,b);
+      answersEl.appendChild(b);
+    });
+  } else if(['E','F','G','H'].includes(currentCategory)){
+    const type = currentCategory==='E' ? 'leaf' : (currentCategory==='F' ? 'fruit' : (currentCategory==='G' ? 'bark' : 'wood'));
+    const url = await getImageFor(name,type);
+    if(url){ mainImg.src = url; mainImg.style.display='block'; } else mainImg.style.display='none';
+    const opts = makeOptions(name,3);
+    opts.forEach(opt=>{
+      const b = document.createElement('div'); b.className='btn'; b.innerText = opt;
+      b.onclick = ()=>handleAnswer(opt,name,b);
+      answersEl.appendChild(b);
+    });
   }
-
   loader.style.display='none';
-  document.getElementById('prevBtn').onclick = ()=>{ clearAuto(); if(qIndex>0){ qIndex--; renderQuestion(); } };
-  document.getElementById('nextBtn').onclick = ()=>{ clearAuto(); if(currentCategory!=='G' && qIndex >= questions.length -1){ finishCategory(); } else { qIndex++; if(qIndex>=questions.length) qIndex = 0; renderQuestion(); } };
+
+  document.getElementById('prevBtn').onclick = ()=>{ clearAuto(); if(indexQ>0){ indexQ--; renderQuestion(); } };
+  document.getElementById('nextBtn').onclick = ()=>{ clearAuto(); if(currentCategory!=='D' && indexQ >= questions.length -1){ finishCategory(); } else { indexQ++; if(indexQ>=questions.length) indexQ = 0; renderQuestion(); } };
 }
 
-/* Make text options (correct + n distractors) from poolKeys */
-function makeTextOptions(correct, poolKeys, n){
-  const others = poolKeys.filter(k=>k !== correct);
-  const s = shuffle(others).slice(0,n);
-  return shuffle([correct, ...s]);
+/* ---------------------------
+  Make options (1 correct + n distractors)
+  --------------------------- */
+function makeOptions(correct, n){
+  const all = TREES.map(t=>t.key).filter(k=>k!==correct);
+  const shuffled = shuffle(all);
+  const distract = shuffled.slice(0,n);
+  return shuffle([correct, ...distract]);
 }
 
-/* Answer handling */
-function handleAnswer(selected, correct, elem){
+/* ---------------------------
+  Answer handling - lives & auto advance
+  --------------------------- */
+function handleAnswer(selected, correct, element){
   Array.from(answersEl.children).forEach(c=> c.onclick = null);
   if(selected === correct){
-    elem.classList.add('correct');
-    score++; scoreText.innerText = `${tr('score')}: ${score}`;
-    saveTempProgress(currentLevel, currentCategory, score, questions.length);
-    autoTimer = setTimeout(()=>{ clearAuto(); goNextAfterCorrect(); }, 800);
+    element.classList.add('correct');
+    score++;
+    scoreText.innerText = `${tr('score')}: ${score}`;
+    setTempProgress(currentLevel, currentCategory, score);
+    autoTimer = setTimeout(()=> { clearAuto(); goNextAfterCorrect(); }, 900);
   } else {
-    elem.classList.add('wrong');
+    element.classList.add('wrong');
     Array.from(answersEl.children).forEach(c=>{ if(c.innerText && c.innerText.trim() === correct) c.classList.add('correct'); });
     lives--; updateHearts();
     if(lives <= 0){ showGameOver(); return; }
-    saveTempProgress(currentLevel, currentCategory, score, questions.length);
+    setTempProgress(currentLevel, currentCategory, score);
   }
 }
 
 function goNextAfterCorrect(){
-  if(currentCategory!=='G' && qIndex >= questions.length - 1){ finishCategory(); }
-  else { qIndex++; if(currentCategory==='G' && qIndex >= questions.length) qIndex = 0; renderQuestion(); }
+  if(currentCategory!=='D' && indexQ >= questions.length - 1){
+    finishCategory();
+  } else {
+    indexQ++;
+    if(currentCategory==='D' && indexQ >= questions.length) indexQ = 0;
+    renderQuestion();
+  }
 }
 
-/* Finish */
+/* ---------------------------
+  Finish category
+  --------------------------- */
 function finishCategory(){
   stopTimer();
   saveCategoryResult(currentLevel, currentCategory, score, questions.length);
@@ -585,7 +599,9 @@ function finishCategory(){
   renderStart();
 }
 
-/* Hearts */
+/* ---------------------------
+  Hearts / Game Over
+  --------------------------- */
 function updateHearts(){
   heartsArea.innerHTML='';
   for(let i=0;i<3;i++){
@@ -595,24 +611,43 @@ function updateHearts(){
     heartsArea.appendChild(hb);
   }
 }
+
 function showGameOver(){
   gameOverEl.style.display='flex';
   document.getElementById('goTitle').innerText = tr('gameover');
   document.getElementById('goText').innerText = (lang==='de') ? 'Du hast keine Leben mehr.' : 'You have no lives left.';
 }
-function retryLevel(){ gameOverEl.style.display='none'; startCategory(currentCategory); }
 
-/* Timer */
+function retryLevel(){
+  gameOverEl.style.display='none';
+  startCategory(currentCategory);
+}
+
+/* ---------------------------
+  Timer (D)
+  --------------------------- */
 function startTimer(){
   stopTimer();
   timeLeft = TIME_SEC;
   timerBox.style.display='block';
   timerText.innerText = timeLeft;
-  timerInterval = setInterval(()=>{ timeLeft--; timerText.innerText = timeLeft; if(timeLeft <= 0){ stopTimer(); finishCategory(); } },1000);
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    timerText.innerText = timeLeft;
+    if(timeLeft <= 0){
+      stopTimer();
+      finishCategory();
+    }
+  },1000);
 }
-function stopTimer(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } timerBox.style.display='none'; }
+function stopTimer(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+  timerBox.style.display='none';
+}
 
-/* Anagram (Category F) */
+/* ---------------------------
+  Anagram (C)
+  --------------------------- */
 function setupAnagram(name){
   anagramWrapper.style.display='block';
   anagramTarget.innerHTML=''; anagramLetters.innerHTML='';
@@ -626,7 +661,10 @@ function setupAnagram(name){
     const s = document.createElement('div'); s.className='anagram-slot'; s.style.minWidth='34px'; s.style.minHeight='34px'; s.style.border='1px solid #e6efe6'; s.style.display='inline-flex'; s.style.alignItems='center'; s.style.justifyContent='center'; s.style.padding='6px'; s.style.margin='6px';
     anagramTarget.appendChild(s);
   }
-  pool.forEach(ch=>{ const b = document.createElement('div'); b.className='letter'; b.innerText = ch; b.onclick = ()=>placeLetter(b); anagramLetters.appendChild(b); });
+  pool.forEach(ch=>{
+    const b = document.createElement('div'); b.className='letter'; b.innerText = ch; b.onclick = ()=>placeLetter(b);
+    anagramLetters.appendChild(b);
+  });
   anagramTarget.dataset.answer = letters.join('');
 }
 function placeLetter(elem){
@@ -640,7 +678,7 @@ function placeLetter(elem){
   const ans = anagramTarget.dataset.answer;
   if(formed === ans){
     score++; scoreText.innerText = `${tr('score')}: ${score}`;
-    saveTempProgress(currentLevel, currentCategory, score, questions.length);
+    setTempProgress(currentLevel, currentCategory, score);
     autoTimer = setTimeout(()=>{ clearAuto(); goNextAfterCorrect(); },900);
   } else {
     lives--; updateHearts();
@@ -651,36 +689,75 @@ function placeLetter(elem){
 }
 function resetAnagram(){ Array.from(anagramLetters.children).forEach(c=> c.style.visibility='visible'); Array.from(anagramTarget.children).forEach(s=> s.innerText=''); }
 
-/* Progress storage */
-function saveTempProgress(level, cat, correct, total){
-  const key = progressKey(level, cat);
-  if(!progress[key]) progress[key] = { correct:0, total:total||0, best:0, completed:false };
+/* ---------------------------
+  Progress storage
+  --------------------------- */
+function setTempProgress(level, cat, correct){
+  const key = progressKey(level,cat);
+  if(!progress[key]) progress[key] = { correct:0, total:0, best:0, completed:false };
   progress[key].correct = correct;
-  progress[key].total = total || progress[key].total;
   localStorage.setItem('tree_progress', JSON.stringify(progress));
   renderCategories();
 }
+
 function saveCategoryResult(level, cat, sc, total){
-  const key = progressKey(level, cat);
-  if(!progress[key]) progress[key] = { correct:0, total:total||0, best:0, completed:false };
+  const key = progressKey(level,cat);
+  if(!progress[key]) progress[key] = { correct:0, total:0, best:0, completed:false };
   progress[key].last = sc;
   if(sc > (progress[key].best||0)) progress[key].best = sc;
   progress[key].correct = sc;
   progress[key].total = total || progress[key].total;
-  if(sc >= Q_PER_CAT) progress[key].completed = true;
+  if(cat==='A' && sc >= Q_PER_CAT) progress[key].completed = true;
+  if(cat==='B' && sc >= Q_PER_CAT) progress[key].completed = true;
+  if(cat==='C' && sc >= Q_PER_CAT) progress[key].completed = true;
   localStorage.setItem('tree_progress', JSON.stringify(progress));
   renderLevelCards();
 }
-function progressKey(level,cat){ return `progress_${level}_${cat}`; }
 
-/* Progress bar */
-function updateProgressBar(){ const pct = Math.round(((qIndex) / Math.max(1, questions.length)) * 100); progressFill.style.width = pct + '%'; }
+/* ---------------------------
+  Progress UI helpers
+  --------------------------- */
+function updateProgressBar(){
+  const pct = Math.round(((indexQ) / Math.max(1, questions.length)) * 100);
+  progressFill.style.width = pct + '%';
+}
 
-/* Utils */
+/* ---------------------------
+  Utils
+  --------------------------- */
 function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
 function clearAuto(){ if(autoTimer){ clearTimeout(autoTimer); autoTimer = null; } }
+function progressKey(level,cat){ return `progress_${level}_${cat}`; }
 
-/* Image validation: create Image and check onload */
+/* ---------------------------
+  Image retrieval: prefer dataset imgs, validate URLs, fallback to wiki commons search
+  --------------------------- */
+async function getImageFor(name, type){
+  // find tree entry
+  const t = TREES.find(x=> x.key === name);
+  // type mapping
+  const typeMap = { tree:'tree', leaf:'leaf', fruit:'fruit', bark:'bark', wood:'wood' };
+  const reqType = typeMap[type] || 'tree';
+  // try dataset specified URL first
+  if(t && t.imgs && t.imgs[reqType]){
+    if(await validateImageUrl(t.imgs[reqType])) return t.imgs[reqType];
+  }
+  // try other image types from dataset as fallback
+  if(t && t.imgs){
+    for(const k of ['tree','leaf','fruit','bark','wood']){
+      if(t.imgs[k] && await validateImageUrl(t.imgs[k])) return t.imgs[k];
+    }
+  }
+  // fallback to wiki (use scientific name if available)
+  const qBase = (t && t.scientific) ? t.scientific : name;
+  const wikiThumb = await searchWikiThumbnail(qBase + (reqType==='leaf' ? ' leaf' : reqType==='bark' ? ' bark' : ''));
+  if(wikiThumb && await validateImageUrl(wikiThumb)) return wikiThumb;
+  // final commons search generic
+  const commons = await searchCommons(name + ' tree');
+  if(commons && await validateImageUrl(commons)) return commons;
+  return null;
+}
+
 function validateImageUrl(url){
   return new Promise((resolve)=>{
     if(!url) return resolve(false);
@@ -693,17 +770,66 @@ function validateImageUrl(url){
   });
 }
 
-/* helpers for save/load */
-function shuffleCopy(arr){ return arr.slice().sort(()=>Math.random()-0.5); }
+async function searchWikiThumbnail(q){
+  try{
+    const s = encodeURIComponent(q);
+    const searchUrl = `https://de.wikipedia.org/w/rest.php/v1/search/page?q=${s}&limit=3`;
+    const resp = await fetch(searchUrl);
+    if(!resp.ok) return null;
+    const j = await resp.json();
+    if(j.pages && j.pages.length){
+      for(const p of j.pages){
+        try{
+          const sumUrl = `https://de.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(p.key)}`;
+          const sresp = await fetch(sumUrl);
+          if(!sresp.ok) continue;
+          const sjson = await sresp.json();
+          if(sjson.thumbnail && sjson.thumbnail.source) return sjson.thumbnail.source;
+          if(sjson.originalimage && sjson.originalimage.source) return sjson.originalimage.source;
+        }catch(e){}
+      }
+    }
+  }catch(e){}
+  return null;
+}
+
+async function searchCommons(q){
+  try{
+    const s = encodeURIComponent(q);
+    const commons = `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&generator=search&gsrsearch=${s}&gsrlimit=3&iiprop=url`;
+    const cr = await fetch(commons);
+    if(!cr.ok) return null;
+    const cj = await cr.json();
+    if(cj.query && cj.query.pages){
+      const pages = Object.values(cj.query.pages);
+      for(const p of pages){
+        if(p.imageinfo && p.imageinfo[0] && p.imageinfo[0].url) return p.imageinfo[0].url;
+      }
+    }
+  }catch(e){}
+  return null;
+}
+
+/* ---------------------------
+  Init render
+  --------------------------- */
+renderLangToggle();
+if(lang) renderStart();
+
+function renderLangToggle(){
+  const box = document.getElementById('langToggle');
+  box.innerHTML='';
+  const btn = document.createElement('button'); btn.style.border='none'; btn.style.background='none'; btn.style.cursor='pointer';
+  btn.innerText = lang==='de' ? '🇩🇪' : '🇬🇧';
+  btn.title = lang==='de' ? 'Sprache ändern' : 'Change language';
+  btn.onclick = ()=>{ document.getElementById('langModal').style.display='flex'; };
+  box.appendChild(btn);
+}
 
 /* navigation helpers */
 function replay(){ startCategory(currentCategory); }
 function goToCategories(){ document.getElementById('endView').style.display='none'; document.getElementById('gameView').style.display='none'; categoriesView.style.display='block'; renderCategories(); }
 function goHome(){ categoriesView.style.display='none'; document.getElementById('gameView').style.display='none'; document.getElementById('endView').style.display='none'; startView.style.display='block'; renderStart(); }
-
-/* initial render */
-renderLangToggle();
-if(lang) renderStart();
 
 </script>
 </body>
